@@ -1,0 +1,448 @@
+-- =============================================
+-- TRIGGERS - BASE DE DATOS CINE
+-- =============================================
+
+USE CineDB;
+
+DELIMITER //
+
+-- =============================================
+-- TRIGGER 1: Validar capacidad antes de insertar reserva
+-- =============================================
+CREATE TRIGGER trg_validar_capacidad_reserva
+BEFORE INSERT ON Reservas
+FOR EACH ROW
+BEGIN
+    DECLARE v_asientos_disponibles INT;
+    
+    SELECT asientos_disponibles INTO v_asientos_disponibles
+    FROM Funciones
+    WHERE id_funcion = NEW.id_funcion;
+    
+    IF NEW.cantidad_boletos > v_asientos_disponibles THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No hay suficientes asientos disponibles para esta función';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 2: Actualizar asientos disponibles al insertar reserva
+-- =============================================
+CREATE TRIGGER trg_actualizar_asientos_reserva
+AFTER INSERT ON Reservas
+FOR EACH ROW
+BEGIN
+    IF NEW.estado = 'Confirmada' THEN
+        UPDATE Funciones
+        SET asientos_disponibles = asientos_disponibles - NEW.cantidad_boletos
+        WHERE id_funcion = NEW.id_funcion;
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 3: Restaurar asientos al cancelar reserva
+-- =============================================
+CREATE TRIGGER trg_restaurar_asientos_cancelacion
+AFTER UPDATE ON Reservas
+FOR EACH ROW
+BEGIN
+    IF OLD.estado != 'Cancelada' AND NEW.estado = 'Cancelada' THEN
+        UPDATE Funciones
+        SET asientos_disponibles = asientos_disponibles + NEW.cantidad_boletos
+        WHERE id_funcion = NEW.id_funcion;
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 4: Validar stock antes de insertar detalle de venta
+-- =============================================
+CREATE TRIGGER trg_validar_stock_venta
+BEFORE INSERT ON Detalle_Venta
+FOR EACH ROW
+BEGIN
+    DECLARE v_stock_actual INT;
+    
+    SELECT stock INTO v_stock_actual
+    FROM Productos
+    WHERE id_producto = NEW.id_producto;
+    
+    IF NEW.cantidad > v_stock_actual THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Stock insuficiente para este producto';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 5: Actualizar stock después de venta
+-- =============================================
+CREATE TRIGGER trg_actualizar_stock_venta
+AFTER INSERT ON Detalle_Venta
+FOR EACH ROW
+BEGIN
+    UPDATE Productos
+    SET stock = stock - NEW.cantidad
+    WHERE id_producto = NEW.id_producto;
+END //
+
+-- =============================================
+-- TRIGGER 6: Calcular subtotal automáticamente en detalle de venta
+-- =============================================
+CREATE TRIGGER trg_calcular_subtotal_detalle
+BEFORE INSERT ON Detalle_Venta
+FOR EACH ROW
+BEGIN
+    DECLARE v_precio DECIMAL(8,2);
+    
+    SELECT precio INTO v_precio
+    FROM Productos
+    WHERE id_producto = NEW.id_producto;
+    
+    SET NEW.precio_unitario = v_precio;
+    SET NEW.subtotal = v_precio * NEW.cantidad;
+END //
+
+-- =============================================
+-- TRIGGER 7: Actualizar total de venta al agregar producto
+-- =============================================
+CREATE TRIGGER trg_actualizar_total_venta
+AFTER INSERT ON Detalle_Venta
+FOR EACH ROW
+BEGIN
+    DECLARE v_nuevo_subtotal DECIMAL(10,2);
+    DECLARE v_nuevo_impuesto DECIMAL(10,2);
+    DECLARE v_nuevo_total DECIMAL(10,2);
+    
+    SELECT SUM(subtotal) INTO v_nuevo_subtotal
+    FROM Detalle_Venta
+    WHERE id_venta = NEW.id_venta;
+    
+    SET v_nuevo_impuesto = v_nuevo_subtotal * 0.16;
+    SET v_nuevo_total = v_nuevo_subtotal + v_nuevo_impuesto;
+    
+    UPDATE Ventas
+    SET subtotal = v_nuevo_subtotal,
+        impuesto = v_nuevo_impuesto,
+        total = v_nuevo_total
+    WHERE id_venta = NEW.id_venta;
+END //
+
+-- =============================================
+-- TRIGGER 8: Actualizar puntos de fidelidad al completar reserva
+-- =============================================
+CREATE TRIGGER trg_agregar_puntos_fidelidad
+AFTER UPDATE ON Reservas
+FOR EACH ROW
+BEGIN
+    IF OLD.estado != 'Completada' AND NEW.estado = 'Completada' THEN
+        UPDATE Clientes
+        SET puntos_fidelidad = puntos_fidelidad + FLOOR(NEW.precio_total)
+        WHERE id_cliente = NEW.id_cliente;
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 9: Validar fechas de membresía
+-- =============================================
+CREATE TRIGGER trg_validar_fechas_membresia
+BEFORE INSERT ON Cliente_Membresia
+FOR EACH ROW
+BEGIN
+    IF NEW.fecha_fin <= NEW.fecha_inicio THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La fecha de fin debe ser posterior a la fecha de inicio';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 10: Actualizar estado de membresía vencida
+-- =============================================
+CREATE TRIGGER trg_actualizar_estado_membresia
+BEFORE UPDATE ON Cliente_Membresia
+FOR EACH ROW
+BEGIN
+    IF NEW.fecha_fin < CURDATE() AND NEW.estado = 'Activa' THEN
+        SET NEW.estado = 'Vencida';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 11: Validar horarios de función
+-- =============================================
+CREATE TRIGGER trg_validar_horarios_funcion
+BEFORE INSERT ON Funciones
+FOR EACH ROW
+BEGIN
+    DECLARE v_conflicto INT;
+    
+    SELECT COUNT(*) INTO v_conflicto
+    FROM Funciones
+    WHERE id_sala = NEW.id_sala
+        AND fecha_funcion = NEW.fecha_funcion
+        AND estado != 'Cancelada'
+        AND (
+            (hora_inicio BETWEEN NEW.hora_inicio AND NEW.hora_fin) OR
+            (hora_fin BETWEEN NEW.hora_inicio AND NEW.hora_fin) OR
+            (NEW.hora_inicio BETWEEN hora_inicio AND hora_fin)
+        );
+    
+    IF v_conflicto > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Conflicto de horario: la sala ya tiene una función programada en ese horario';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 12: Generar código de reserva automático
+-- =============================================
+CREATE TRIGGER trg_generar_codigo_reserva
+BEFORE INSERT ON Reservas
+FOR EACH ROW
+BEGIN
+    IF NEW.codigo_reserva IS NULL OR NEW.codigo_reserva = '' THEN
+        SET NEW.codigo_reserva = CONCAT('RES', 
+            YEAR(NOW()), 
+            LPAD(MONTH(NOW()), 2, '0'),
+            LPAD(DAY(NOW()), 2, '0'),
+            LPAD(FLOOR(RAND() * 9999), 4, '0')
+        );
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 13: Validar edad mínima para clasificación
+-- =============================================
+CREATE TRIGGER trg_validar_edad_boleto
+BEFORE INSERT ON Boletos
+FOR EACH ROW
+BEGIN
+    DECLARE v_edad_cliente INT;
+    DECLARE v_edad_minima INT;
+    DECLARE v_id_cliente INT;
+    DECLARE v_id_clasificacion INT;
+    
+    -- Obtener cliente de la reserva
+    SELECT id_cliente INTO v_id_cliente
+    FROM Reservas
+    WHERE id_reserva = NEW.id_reserva;
+    
+    -- Calcular edad del cliente
+    SELECT TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) INTO v_edad_cliente
+    FROM Clientes
+    WHERE id_cliente = v_id_cliente;
+    
+    -- Obtener clasificación de la película
+    SELECT c.edad_minima INTO v_edad_minima
+    FROM Reservas r
+    INNER JOIN Funciones f ON r.id_funcion = f.id_funcion
+    INNER JOIN Peliculas p ON f.id_pelicula = p.id_pelicula
+    INNER JOIN Clasificaciones c ON p.id_clasificacion = c.id_clasificacion
+    WHERE r.id_reserva = NEW.id_reserva;
+    
+    -- Validar edad solo para tipo General
+    IF NEW.tipo_boleto = 'General' AND v_edad_cliente < v_edad_minima THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El cliente no cumple con la edad mínima para esta película';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 14: Generar código QR automático para boleto
+-- =============================================
+CREATE TRIGGER trg_generar_qr_boleto
+BEFORE INSERT ON Boletos
+FOR EACH ROW
+BEGIN
+    IF NEW.codigo_qr IS NULL OR NEW.codigo_qr = '' THEN
+        SET NEW.codigo_qr = CONCAT('QR',
+            LPAD(NEW.id_reserva, 6, '0'),
+            LPAD(FLOOR(RAND() * 999999), 6, '0')
+        );
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 15: Actualizar estado de función según fecha
+-- =============================================
+CREATE TRIGGER trg_actualizar_estado_funcion
+BEFORE UPDATE ON Funciones
+FOR EACH ROW
+BEGIN
+    DECLARE v_fecha_hora_funcion DATETIME;
+    
+    SET v_fecha_hora_funcion = CONCAT(NEW.fecha_funcion, ' ', NEW.hora_inicio);
+    
+    IF v_fecha_hora_funcion < NOW() AND NEW.estado = 'Programada' THEN
+        IF v_fecha_hora_funcion > DATE_SUB(NOW(), INTERVAL 3 HOUR) THEN
+            SET NEW.estado = 'En curso';
+        ELSE
+            SET NEW.estado = 'Finalizada';
+        END IF;
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 16: Validar precio de función
+-- =============================================
+CREATE TRIGGER trg_validar_precio_funcion
+BEFORE INSERT ON Funciones
+FOR EACH ROW
+BEGIN
+    IF NEW.precio_base <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El precio de la función debe ser mayor a cero';
+    END IF;
+    
+    -- Precio máximo de $50
+    IF NEW.precio_base > 50 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El precio de la función excede el límite permitido';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 17: Prevenir eliminación de reservas confirmadas
+-- =============================================
+CREATE TRIGGER trg_prevenir_eliminar_reserva
+BEFORE DELETE ON Reservas
+FOR EACH ROW
+BEGIN
+    IF OLD.estado = 'Completada' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No se pueden eliminar reservas completadas. Cancele la reserva en su lugar';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 18: Auditoría de cambios en películas
+-- =============================================
+-- Primero crear tabla de auditoría
+CREATE TABLE IF NOT EXISTS Auditoria_Peliculas (
+    id_auditoria INT PRIMARY KEY AUTO_INCREMENT,
+    id_pelicula INT,
+    campo_modificado VARCHAR(50),
+    valor_anterior TEXT,
+    valor_nuevo TEXT,
+    usuario VARCHAR(100),
+    fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER trg_auditoria_peliculas
+AFTER UPDATE ON Peliculas
+FOR EACH ROW
+BEGIN
+    IF OLD.estado != NEW.estado THEN
+        INSERT INTO Auditoria_Peliculas (id_pelicula, campo_modificado, valor_anterior, valor_nuevo, usuario)
+        VALUES (NEW.id_pelicula, 'estado', OLD.estado, NEW.estado, USER());
+    END IF;
+    
+    IF OLD.precio_base != NEW.precio_base THEN
+        INSERT INTO Auditoria_Peliculas (id_pelicula, campo_modificado, valor_anterior, valor_nuevo, usuario)
+        VALUES (NEW.id_pelicula, 'precio_base', OLD.precio_base, NEW.precio_base, USER());
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 19: Validar capacidad de sala
+-- =============================================
+CREATE TRIGGER trg_validar_capacidad_sala
+BEFORE INSERT ON Salas
+FOR EACH ROW
+BEGIN
+    IF NEW.capacidad <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La capacidad de la sala debe ser mayor a cero';
+    END IF;
+    
+    IF NEW.capacidad > 500 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La capacidad de la sala excede el límite permitido (500)';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 20: Actualizar fecha de expiración de reserva
+-- =============================================
+CREATE TRIGGER trg_calcular_expiracion_reserva
+BEFORE INSERT ON Reservas
+FOR EACH ROW
+BEGIN
+    DECLARE v_fecha_funcion DATE;
+    DECLARE v_hora_funcion TIME;
+    
+    SELECT fecha_funcion, hora_inicio 
+    INTO v_fecha_funcion, v_hora_funcion
+    FROM Funciones
+    WHERE id_funcion = NEW.id_funcion;
+    
+    -- La reserva expira 30 minutos antes del inicio de la función
+    SET NEW.fecha_expiracion = DATE_SUB(
+        TIMESTAMP(v_fecha_funcion, v_hora_funcion),
+        INTERVAL 30 MINUTE
+    );
+END //
+
+-- =============================================
+-- TRIGGER 21: Validar método de pago
+-- =============================================
+CREATE TRIGGER trg_validar_metodo_pago
+BEFORE INSERT ON Ventas
+FOR EACH ROW
+BEGIN
+    IF NEW.metodo_pago NOT IN ('Efectivo', 'Tarjeta Débito', 'Tarjeta Crédito', 'Transferencia', 'App Móvil') THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Método de pago no válido';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 22: Prevenir modificación de boletos usados
+-- =============================================
+CREATE TRIGGER trg_proteger_boletos_usados
+BEFORE UPDATE ON Boletos
+FOR EACH ROW
+BEGIN
+    IF OLD.usado = TRUE AND NEW.usado = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No se puede reactivar un boleto ya utilizado';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 23: Validar descuento de membresía
+-- =============================================
+CREATE TRIGGER trg_validar_descuento_membresia
+BEFORE INSERT ON Membresias
+FOR EACH ROW
+BEGIN
+    IF NEW.descuento_porcentaje < 0 OR NEW.descuento_porcentaje > 50 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El descuento debe estar entre 0% y 50%';
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 24: Registrar hora de uso de boleto
+-- =============================================
+CREATE TRIGGER trg_registrar_uso_boleto
+BEFORE UPDATE ON Boletos
+FOR EACH ROW
+BEGIN
+    IF OLD.usado = FALSE AND NEW.usado = TRUE THEN
+        SET NEW.fecha_uso = NOW();
+    END IF;
+END //
+
+-- =============================================
+-- TRIGGER 25: Validar duración de película
+-- =============================================
+CREATE TRIGGER trg_validar_duracion_pelicula
+BEFORE INSERT ON Peliculas
+FOR EACH ROW
+BEGIN
+    IF NEW.duracion_minutos < 1 OR NEW.duracion_minutos > 300 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La duración de la película debe estar entre 1 y 300 minutos';
+    END IF;
+END //
+
+DELIMITER ;

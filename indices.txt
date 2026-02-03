@@ -1,0 +1,166 @@
+-- =============================================
+-- ÍNDICES - BASE DE DATOS CINE
+-- =============================================
+
+USE CineDB;
+
+-- =============================================
+-- ÍNDICES para Paises
+-- =============================================
+CREATE INDEX idx_pais_codigo ON Paises(codigo_iso);
+
+-- =============================================
+-- ÍNDICES para Ciudades
+-- =============================================
+CREATE INDEX idx_ciudad_pais ON Ciudades(id_pais);
+CREATE INDEX idx_ciudad_nombre ON Ciudades(nombre_ciudad);
+
+-- =============================================
+-- ÍNDICES para Complejos
+-- =============================================
+CREATE INDEX idx_complejo_ciudad ON Complejos(id_ciudad);
+CREATE INDEX idx_complejo_estado ON Complejos(estado);
+CREATE INDEX idx_complejo_nombre ON Complejos(nombre_complejo);
+
+-- =============================================
+-- ÍNDICES para Salas
+-- =============================================
+CREATE INDEX idx_sala_complejo ON Salas(id_complejo);
+CREATE INDEX idx_sala_tipo ON Salas(tipo_sala);
+CREATE INDEX idx_sala_estado ON Salas(estado);
+CREATE INDEX idx_sala_complejo_numero ON Salas(id_complejo, numero_sala);
+
+-- =============================================
+-- ÍNDICES para Peliculas
+-- =============================================
+CREATE INDEX idx_pelicula_titulo ON Peliculas(titulo);
+CREATE INDEX idx_pelicula_clasificacion ON Peliculas(id_clasificacion);
+CREATE INDEX idx_pelicula_estado ON Peliculas(estado);
+CREATE INDEX idx_pelicula_año ON Peliculas(año_estreno);
+CREATE INDEX idx_pelicula_director ON Peliculas(director);
+CREATE INDEX idx_pelicula_pais ON Peliculas(id_pais_origen);
+
+-- =============================================
+-- ÍNDICES para Pelicula_Genero
+-- =============================================
+CREATE INDEX idx_pg_genero ON Pelicula_Genero(id_genero);
+CREATE INDEX idx_pg_pelicula ON Pelicula_Genero(id_pelicula);
+
+-- =============================================
+-- ÍNDICES para Actores
+-- =============================================
+CREATE INDEX idx_actor_nombre ON Actores(nombre_completo);
+CREATE INDEX idx_actor_pais ON Actores(id_pais_origen);
+
+-- =============================================
+-- ÍNDICES para Pelicula_Actor
+-- =============================================
+CREATE INDEX idx_pa_actor ON Pelicula_Actor(id_actor);
+CREATE INDEX idx_pa_pelicula ON Pelicula_Actor(id_pelicula);
+CREATE INDEX idx_pa_protagonista ON Pelicula_Actor(es_protagonista);
+
+-- =============================================
+-- ÍNDICES para Funciones
+-- =============================================
+CREATE INDEX idx_funcion_pelicula ON Funciones(id_pelicula);
+CREATE INDEX idx_funcion_sala ON Funciones(id_sala);
+CREATE INDEX idx_funcion_fecha ON Funciones(fecha_funcion);
+CREATE INDEX idx_funcion_estado ON Funciones(estado);
+CREATE INDEX idx_funcion_fecha_hora ON Funciones(fecha_funcion, hora_inicio);
+CREATE INDEX idx_funcion_pelicula_fecha ON Funciones(id_pelicula, fecha_funcion);
+
+-- =============================================
+-- ÍNDICES para Clientes
+-- =============================================
+CREATE INDEX idx_cliente_email ON Clientes(email);
+CREATE INDEX idx_cliente_documento ON Clientes(documento_identidad);
+CREATE INDEX idx_cliente_nombre ON Clientes(nombre, apellido);
+CREATE INDEX idx_cliente_ciudad ON Clientes(id_ciudad);
+CREATE INDEX idx_cliente_puntos ON Clientes(puntos_fidelidad);
+
+-- =============================================
+-- ÍNDICES para Membresias
+-- =============================================
+CREATE INDEX idx_membresia_nombre ON Membresias(nombre_membresia);
+CREATE INDEX idx_membresia_precio ON Membresias(precio_mensual);
+
+-- =============================================
+-- ÍNDICES para Cliente_Membresia
+-- =============================================
+CREATE INDEX idx_cm_cliente ON Cliente_Membresia(id_cliente);
+CREATE INDEX idx_cm_membresia ON Cliente_Membresia(id_membresia);
+CREATE INDEX idx_cm_estado ON Cliente_Membresia(estado);
+CREATE INDEX idx_cm_fechas ON Cliente_Membresia(fecha_inicio, fecha_fin);
+
+-- =============================================
+-- ÍNDICES para Reservas
+-- =============================================
+CREATE INDEX idx_reserva_cliente ON Reservas(id_cliente);
+CREATE INDEX idx_reserva_funcion ON Reservas(id_funcion);
+CREATE INDEX idx_reserva_codigo ON Reservas(codigo_reserva);
+CREATE INDEX idx_reserva_estado ON Reservas(estado);
+CREATE INDEX idx_reserva_fecha ON Reservas(fecha_reserva);
+
+-- =============================================
+-- ÍNDICES para Boletos
+-- =============================================
+CREATE INDEX idx_boleto_reserva ON Boletos(id_reserva);
+CREATE INDEX idx_boleto_qr ON Boletos(codigo_qr);
+CREATE INDEX idx_boleto_usado ON Boletos(usado);
+CREATE INDEX idx_boleto_tipo ON Boletos(tipo_boleto);
+
+-- =============================================
+-- ÍNDICES para Productos
+-- =============================================
+CREATE INDEX idx_producto_categoria ON Productos(categoria);
+CREATE INDEX idx_producto_disponible ON Productos(disponible);
+CREATE INDEX idx_producto_nombre ON Productos(nombre_producto);
+
+-- =============================================
+-- ÍNDICES para Ventas
+-- =============================================
+CREATE INDEX idx_venta_cliente ON Ventas(id_cliente);
+CREATE INDEX idx_venta_complejo ON Ventas(id_complejo);
+CREATE INDEX idx_venta_fecha ON Ventas(fecha_venta);
+CREATE INDEX idx_venta_estado ON Ventas(estado);
+CREATE INDEX idx_venta_metodo_pago ON Ventas(metodo_pago);
+
+-- =============================================
+-- ÍNDICES para Detalle_Venta
+-- =============================================
+CREATE INDEX idx_dv_venta ON Detalle_Venta(id_venta);
+CREATE INDEX idx_dv_producto ON Detalle_Venta(id_producto);
+
+-- =============================================
+-- ÍNDICES para Empleados
+-- =============================================
+CREATE INDEX idx_empleado_complejo ON Empleados(id_complejo);
+CREATE INDEX idx_empleado_puesto ON Empleados(puesto);
+CREATE INDEX idx_empleado_estado ON Empleados(estado);
+CREATE INDEX idx_empleado_email ON Empleados(email);
+CREATE INDEX idx_empleado_nombre ON Empleados(nombre, apellido);
+
+-- =============================================
+-- ÍNDICES COMPUESTOS para consultas complejas
+-- =============================================
+
+-- Para buscar funciones disponibles por película y fecha
+CREATE INDEX idx_funcion_pelicula_fecha_estado ON Funciones(id_pelicula, fecha_funcion, estado);
+
+-- Para buscar funciones por sala y fecha
+CREATE INDEX idx_funcion_sala_fecha_hora ON Funciones(id_sala, fecha_funcion, hora_inicio);
+
+-- Para reportes de ventas por complejo y fecha
+CREATE INDEX idx_venta_complejo_fecha_estado ON Ventas(id_complejo, fecha_venta, estado);
+
+-- Para buscar reservas de cliente en un período
+CREATE INDEX idx_reserva_cliente_fecha_estado ON Reservas(id_cliente, fecha_reserva, estado);
+
+-- Para análisis de productos vendidos
+CREATE INDEX idx_dv_producto_fecha ON Detalle_Venta(id_producto, fecha_registro);
+
+-- Para consultas de películas en cartelera
+CREATE INDEX idx_pelicula_estado_año ON Peliculas(estado, año_estreno);
+
+-- Para búsqueda de empleados activos por complejo
+CREATE INDEX idx_empleado_complejo_estado_puesto ON Empleados(id_complejo, estado, puesto);

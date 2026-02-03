@@ -1,0 +1,585 @@
+-- =============================================
+-- VISTAS - BASE DE DATOS CINE
+-- =============================================
+
+USE CineDB;
+
+-- =============================================
+-- VISTA 1: Cartelera Completa
+-- Películas en cartelera con toda su información
+-- =============================================
+CREATE OR REPLACE VIEW v_cartelera_completa AS
+SELECT 
+    p.id_pelicula,
+    p.titulo,
+    p.titulo_original,
+    p.duracion_minutos,
+    p.director,
+    p.año_estreno,
+    p.sinopsis,
+    c.codigo AS clasificacion,
+    c.descripcion AS clasificacion_desc,
+    c.edad_minima,
+    GROUP_CONCAT(DISTINCT g.nombre_genero ORDER BY g.nombre_genero SEPARATOR ', ') AS generos,
+    pa.nombre_pais AS pais_origen,
+    p.idioma_original,
+    COUNT(DISTINCT f.id_funcion) AS funciones_programadas,
+    MIN(f.precio_base) AS precio_minimo,
+    MAX(f.precio_base) AS precio_maximo
+FROM Peliculas p
+INNER JOIN Clasificaciones c ON p.id_clasificacion = c.id_clasificacion
+LEFT JOIN Paises pa ON p.id_pais_origen = pa.id_pais
+LEFT JOIN Pelicula_Genero pg ON p.id_pelicula = pg.id_pelicula
+LEFT JOIN Generos g ON pg.id_genero = g.id_genero
+LEFT JOIN Funciones f ON p.id_pelicula = f.id_pelicula 
+    AND f.fecha_funcion >= CURDATE() 
+    AND f.estado = 'Programada'
+WHERE p.estado = 'En cartelera'
+GROUP BY p.id_pelicula;
+
+-- =============================================
+-- VISTA 2: Funciones Disponibles Hoy
+-- Funciones programadas para hoy con disponibilidad
+-- =============================================
+CREATE OR REPLACE VIEW v_funciones_hoy AS
+SELECT 
+    f.id_funcion,
+    p.titulo AS pelicula,
+    p.duracion_minutos,
+    c.nombre_complejo AS complejo,
+    c.direccion,
+    c.telefono,
+    s.numero_sala,
+    s.tipo_sala,
+    s.capacidad,
+    f.hora_inicio,
+    f.hora_fin,
+    f.precio_base,
+    f.asientos_disponibles,
+    (s.capacidad - f.asientos_disponibles) AS asientos_ocupados,
+    ROUND((s.capacidad - f.asientos_disponibles) / s.capacidad * 100, 1) AS porcentaje_ocupacion,
+    f.subtitulada,
+    f.idioma_audio,
+    cl.codigo AS clasificacion
+FROM Funciones f
+INNER JOIN Peliculas p ON f.id_pelicula = p.id_pelicula
+INNER JOIN Salas s ON f.id_sala = s.id_sala
+INNER JOIN Complejos c ON s.id_complejo = c.id_complejo
+INNER JOIN Clasificaciones cl ON p.id_clasificacion = cl.id_clasificacion
+WHERE f.fecha_funcion = CURDATE()
+    AND f.estado = 'Programada'
+    AND f.asientos_disponibles > 0
+ORDER BY f.hora_inicio;
+
+-- =============================================
+-- VISTA 3: Películas con Elenco Principal
+-- Películas con sus actores principales
+-- =============================================
+CREATE OR REPLACE VIEW v_peliculas_con_elenco AS
+SELECT 
+    p.id_pelicula,
+    p.titulo,
+    p.director,
+    p.año_estreno,
+    GROUP_CONCAT(
+        DISTINCT CASE 
+            WHEN pa.es_protagonista = TRUE 
+            THEN CONCAT(a.nombre_completo, ' (', pa.personaje, ')') 
+        END 
+        ORDER BY a.nombre_completo 
+        SEPARATOR ', '
+    ) AS protagonistas,
+    GROUP_CONCAT(
+        DISTINCT CASE 
+            WHEN pa.es_protagonista = FALSE 
+            THEN a.nombre_completo 
+        END 
+        ORDER BY a.nombre_completo 
+        SEPARATOR ', '
+    ) AS reparto_secundario,
+    COUNT(DISTINCT a.id_actor) AS total_actores
+FROM Peliculas p
+LEFT JOIN Pelicula_Actor pa ON p.id_pelicula = pa.id_pelicula
+LEFT JOIN Actores a ON pa.id_actor = a.id_actor
+GROUP BY p.id_pelicula;
+
+-- =============================================
+-- VISTA 4: Reservas Activas
+-- Reservas confirmadas pendientes de uso
+-- =============================================
+CREATE OR REPLACE VIEW v_reservas_activas AS
+SELECT 
+    r.id_reserva,
+    r.codigo_reserva,
+    CONCAT(cl.nombre, ' ', cl.apellido) AS cliente,
+    cl.email,
+    cl.telefono,
+    p.titulo AS pelicula,
+    c.nombre_complejo AS complejo,
+    s.numero_sala,
+    f.fecha_funcion,
+    f.hora_inicio,
+    r.cantidad_boletos,
+    r.precio_total,
+    r.fecha_reserva,
+    r.fecha_expiracion,
+    TIMESTAMPDIFF(HOUR, NOW(), r.fecha_expiracion) AS horas_para_expiracion
+FROM Reservas r
+INNER JOIN Clientes cl ON r.id_cliente = cl.id_cliente
+INNER JOIN Funciones f ON r.id_funcion = f.id_funcion
+INNER JOIN Peliculas p ON f.id_pelicula = p.id_pelicula
+INNER JOIN Salas s ON f.id_sala = s.id_sala
+INNER JOIN Complejos c ON s.id_complejo = c.id_complejo
+WHERE r.estado = 'Confirmada'
+    AND f.fecha_funcion >= CURDATE()
+ORDER BY f.fecha_funcion, f.hora_inicio;
+
+-- =============================================
+-- VISTA 5: Top 10 Películas del Mes
+-- Películas más vistas del mes actual
+-- =============================================
+CREATE OR REPLACE VIEW v_top_peliculas_mes AS
+SELECT 
+    p.id_pelicula,
+    p.titulo,
+    p.director,
+    COUNT(DISTINCT r.id_reserva) AS total_reservas,
+    SUM(r.cantidad_boletos) AS boletos_vendidos,
+    SUM(r.precio_total) AS ingresos_totales,
+    AVG(r.precio_total / r.cantidad_boletos) AS precio_promedio_boleto,
+    COUNT(DISTINCT f.id_funcion) AS funciones_realizadas
+FROM Peliculas p
+INNER JOIN Funciones f ON p.id_pelicula = f.id_pelicula
+INNER JOIN Reservas r ON f.id_funcion = r.id_funcion
+WHERE YEAR(f.fecha_funcion) = YEAR(CURDATE())
+    AND MONTH(f.fecha_funcion) = MONTH(CURDATE())
+    AND r.estado IN ('Confirmada', 'Completada')
+GROUP BY p.id_pelicula
+ORDER BY boletos_vendidos DESC
+LIMIT 10;
+
+-- =============================================
+-- VISTA 6: Productos Disponibles con Stock
+-- Catálogo de productos disponibles
+-- =============================================
+CREATE OR REPLACE VIEW v_productos_disponibles AS
+SELECT 
+    p.id_producto,
+    p.nombre_producto,
+    p.categoria,
+    p.precio,
+    p.stock,
+    p.descripcion,
+    p.calorias,
+    CASE 
+        WHEN p.stock = 0 THEN 'Sin stock'
+        WHEN p.stock < 50 THEN 'Stock bajo'
+        WHEN p.stock < 100 THEN 'Stock medio'
+        ELSE 'Stock alto'
+    END AS estado_stock,
+    ROUND((p.precio - p.costo) / p.precio * 100, 1) AS margen_ganancia_porcentaje
+FROM Productos p
+WHERE p.disponible = TRUE
+ORDER BY p.categoria, p.nombre_producto;
+
+-- =============================================
+-- VISTA 7: Clientes VIP
+-- Clientes con más puntos de fidelidad
+-- =============================================
+CREATE OR REPLACE VIEW v_clientes_vip AS
+SELECT 
+    cl.id_cliente,
+    CONCAT(cl.nombre, ' ', cl.apellido) AS nombre_completo,
+    cl.email,
+    cl.telefono,
+    cl.puntos_fidelidad,
+    COUNT(DISTINCT r.id_reserva) AS total_reservas,
+    SUM(r.cantidad_boletos) AS boletos_comprados,
+    SUM(r.precio_total) AS gasto_total_boletos,
+    COALESCE(SUM(v.total), 0) AS gasto_total_productos,
+    (SUM(r.precio_total) + COALESCE(SUM(v.total), 0)) AS gasto_total,
+    m.nombre_membresia,
+    cm.estado AS estado_membresia
+FROM Clientes cl
+LEFT JOIN Reservas r ON cl.id_cliente = r.id_cliente 
+    AND r.estado IN ('Confirmada', 'Completada')
+LEFT JOIN Ventas v ON cl.id_cliente = v.id_cliente 
+    AND v.estado = 'Completada'
+LEFT JOIN Cliente_Membresia cm ON cl.id_cliente = cm.id_cliente 
+    AND cm.estado = 'Activa'
+LEFT JOIN Membresias m ON cm.id_membresia = m.id_membresia
+GROUP BY cl.id_cliente
+HAVING cl.puntos_fidelidad >= 500
+ORDER BY cl.puntos_fidelidad DESC;
+
+-- =============================================
+-- VISTA 8: Ocupación de Salas por Complejo
+-- Ocupación promedio de salas
+-- =============================================
+CREATE OR REPLACE VIEW v_ocupacion_salas AS
+SELECT 
+    c.id_complejo,
+    c.nombre_complejo,
+    s.numero_sala,
+    s.tipo_sala,
+    s.capacidad,
+    COUNT(f.id_funcion) AS funciones_programadas,
+    SUM(s.capacidad - f.asientos_disponibles) AS total_asientos_vendidos,
+    SUM(s.capacidad) AS capacidad_total_funciones,
+    ROUND(AVG((s.capacidad - f.asientos_disponibles) / s.capacidad * 100), 1) AS ocupacion_promedio,
+    SUM(f.precio_base * (s.capacidad - f.asientos_disponibles)) AS ingresos_estimados
+FROM Complejos c
+INNER JOIN Salas s ON c.id_complejo = s.id_complejo
+LEFT JOIN Funciones f ON s.id_sala = f.id_sala 
+    AND f.fecha_funcion >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    AND f.estado IN ('Programada', 'En curso', 'Finalizada')
+GROUP BY c.id_complejo, s.id_sala
+ORDER BY c.nombre_complejo, s.numero_sala;
+
+-- =============================================
+-- VISTA 9: Ventas Diarias Resumen
+-- Resumen de ventas por día
+-- =============================================
+CREATE OR REPLACE VIEW v_ventas_diarias AS
+SELECT 
+    DATE(v.fecha_venta) AS fecha,
+    c.nombre_complejo AS complejo,
+    COUNT(DISTINCT v.id_venta) AS total_transacciones,
+    SUM(v.subtotal) AS subtotal_dia,
+    SUM(v.impuesto) AS impuestos_dia,
+    SUM(v.total) AS total_dia,
+    AVG(v.total) AS ticket_promedio,
+    COUNT(DISTINCT v.id_cliente) AS clientes_unicos,
+    SUM(CASE WHEN v.metodo_pago = 'Efectivo' THEN v.total ELSE 0 END) AS ventas_efectivo,
+    SUM(CASE WHEN v.metodo_pago IN ('Tarjeta Débito', 'Tarjeta Crédito') THEN v.total ELSE 0 END) AS ventas_tarjeta,
+    SUM(CASE WHEN v.metodo_pago = 'App Móvil' THEN v.total ELSE 0 END) AS ventas_app
+FROM Ventas v
+INNER JOIN Complejos c ON v.id_complejo = c.id_complejo
+WHERE v.estado = 'Completada'
+GROUP BY DATE(v.fecha_venta), c.id_complejo
+ORDER BY fecha DESC, complejo;
+
+-- =============================================
+-- VISTA 10: Productos Más Vendidos
+-- Ranking de productos por ventas
+-- =============================================
+CREATE OR REPLACE VIEW v_productos_mas_vendidos AS
+SELECT 
+    p.id_producto,
+    p.nombre_producto,
+    p.categoria,
+    p.precio,
+    SUM(dv.cantidad) AS unidades_vendidas,
+    SUM(dv.subtotal) AS ingresos_totales,
+    COUNT(DISTINCT dv.id_venta) AS numero_transacciones,
+    AVG(dv.cantidad) AS promedio_por_venta,
+    RANK() OVER (ORDER BY SUM(dv.cantidad) DESC) AS ranking_ventas,
+    RANK() OVER (PARTITION BY p.categoria ORDER BY SUM(dv.cantidad) DESC) AS ranking_categoria
+FROM Productos p
+INNER JOIN Detalle_Venta dv ON p.id_producto = dv.id_producto
+INNER JOIN Ventas v ON dv.id_venta = v.id_venta
+WHERE v.estado = 'Completada'
+    AND v.fecha_venta >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+GROUP BY p.id_producto
+ORDER BY unidades_vendidas DESC;
+
+-- =============================================
+-- VISTA 11: Empleados por Complejo
+-- Lista de empleados activos
+-- =============================================
+CREATE OR REPLACE VIEW v_empleados_activos AS
+SELECT 
+    e.id_empleado,
+    CONCAT(e.nombre, ' ', e.apellido) AS nombre_completo,
+    e.email,
+    e.telefono,
+    e.puesto,
+    c.nombre_complejo AS complejo,
+    c.direccion AS direccion_complejo,
+    e.salario,
+    e.fecha_contratacion,
+    TIMESTAMPDIFF(YEAR, e.fecha_contratacion, CURDATE()) AS años_servicio,
+    TIMESTAMPDIFF(MONTH, e.fecha_contratacion, CURDATE()) % 12 AS meses_adicionales,
+    e.estado
+FROM Empleados e
+INNER JOIN Complejos c ON e.id_complejo = c.id_complejo
+WHERE e.estado = 'Activo'
+ORDER BY c.nombre_complejo, e.puesto, e.apellido;
+
+-- =============================================
+-- VISTA 12: Historial de Funciones
+-- Funciones realizadas con estadísticas
+-- =============================================
+CREATE OR REPLACE VIEW v_historial_funciones AS
+SELECT 
+    f.id_funcion,
+    p.titulo AS pelicula,
+    c.nombre_complejo AS complejo,
+    s.numero_sala,
+    s.tipo_sala,
+    f.fecha_funcion,
+    f.hora_inicio,
+    f.precio_base,
+    s.capacidad,
+    (s.capacidad - f.asientos_disponibles) AS boletos_vendidos,
+    f.asientos_disponibles,
+    ROUND((s.capacidad - f.asientos_disponibles) / s.capacidad * 100, 1) AS porcentaje_ocupacion,
+    (s.capacidad - f.asientos_disponibles) * f.precio_base AS ingresos_funcion,
+    f.estado,
+    COUNT(DISTINCT r.id_reserva) AS numero_reservas
+FROM Funciones f
+INNER JOIN Peliculas p ON f.id_pelicula = p.id_pelicula
+INNER JOIN Salas s ON f.id_sala = s.id_sala
+INNER JOIN Complejos c ON s.id_complejo = c.id_complejo
+LEFT JOIN Reservas r ON f.id_funcion = r.id_funcion
+GROUP BY f.id_funcion
+ORDER BY f.fecha_funcion DESC, f.hora_inicio DESC;
+
+-- =============================================
+-- VISTA 13: Membresías Activas
+-- Clientes con membresías activas y beneficios
+-- =============================================
+CREATE OR REPLACE VIEW v_membresias_activas AS
+SELECT 
+    cm.id_cliente_membresia,
+    CONCAT(cl.nombre, ' ', cl.apellido) AS cliente,
+    cl.email,
+    cl.telefono,
+    m.nombre_membresia,
+    m.precio_mensual,
+    m.descuento_porcentaje,
+    m.funciones_gratis_mes,
+    cm.fecha_inicio,
+    cm.fecha_fin,
+    DATEDIFF(cm.fecha_fin, CURDATE()) AS dias_restantes,
+    CASE 
+        WHEN DATEDIFF(cm.fecha_fin, CURDATE()) <= 7 THEN 'Por vencer'
+        WHEN DATEDIFF(cm.fecha_fin, CURDATE()) <= 30 THEN 'Próxima a vencer'
+        ELSE 'Vigente'
+    END AS estado_vigencia,
+    cl.puntos_fidelidad
+FROM Cliente_Membresia cm
+INNER JOIN Clientes cl ON cm.id_cliente = cl.id_cliente
+INNER JOIN Membresias m ON cm.id_membresia = m.id_membresia
+WHERE cm.estado = 'Activa'
+    AND cm.fecha_fin >= CURDATE()
+ORDER BY cm.fecha_fin;
+
+-- =============================================
+-- VISTA 14: Ingresos por Complejo
+-- Resumen de ingresos por complejo
+-- =============================================
+CREATE OR REPLACE VIEW v_ingresos_complejo AS
+SELECT 
+    c.id_complejo,
+    c.nombre_complejo,
+    ci.nombre_ciudad AS ciudad,
+    -- Ingresos por boletos
+    COALESCE(SUM(DISTINCT r.precio_total), 0) AS ingresos_boletos,
+    COUNT(DISTINCT r.id_reserva) AS total_reservas,
+    -- Ingresos por productos
+    COALESCE(SUM(DISTINCT v.total), 0) AS ingresos_productos,
+    COUNT(DISTINCT v.id_venta) AS total_ventas,
+    -- Totales
+    (COALESCE(SUM(DISTINCT r.precio_total), 0) + COALESCE(SUM(DISTINCT v.total), 0)) AS ingresos_totales,
+    -- Promedios
+    AVG(r.precio_total) AS ticket_promedio_boletos,
+    AVG(v.total) AS ticket_promedio_productos
+FROM Complejos c
+INNER JOIN Ciudades ci ON c.id_ciudad = ci.id_ciudad
+LEFT JOIN Salas s ON c.id_complejo = s.id_complejo
+LEFT JOIN Funciones f ON s.id_sala = f.id_sala
+LEFT JOIN Reservas r ON f.id_funcion = r.id_funcion 
+    AND r.estado IN ('Confirmada', 'Completada')
+    AND r.fecha_reserva >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+LEFT JOIN Ventas v ON c.id_complejo = v.id_complejo 
+    AND v.estado = 'Completada'
+    AND v.fecha_venta >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+GROUP BY c.id_complejo
+ORDER BY ingresos_totales DESC;
+
+-- =============================================
+-- VISTA 15: Próximos Estrenos
+-- Películas próximas a estrenarse
+-- =============================================
+CREATE OR REPLACE VIEW v_proximos_estrenos AS
+SELECT 
+    p.id_pelicula,
+    p.titulo,
+    p.titulo_original,
+    p.duracion_minutos,
+    p.director,
+    p.sinopsis,
+    p.año_estreno,
+    c.codigo AS clasificacion,
+    GROUP_CONCAT(DISTINCT g.nombre_genero SEPARATOR ', ') AS generos,
+    GROUP_CONCAT(DISTINCT a.nombre_completo SEPARATOR ', ') AS elenco_principal,
+    MIN(f.fecha_funcion) AS fecha_estreno,
+    COUNT(DISTINCT f.id_funcion) AS funciones_programadas
+FROM Peliculas p
+INNER JOIN Clasificaciones c ON p.id_clasificacion = c.id_clasificacion
+LEFT JOIN Pelicula_Genero pg ON p.id_pelicula = pg.id_pelicula
+LEFT JOIN Generos g ON pg.id_genero = g.id_genero
+LEFT JOIN Pelicula_Actor pa ON p.id_pelicula = pa.id_pelicula AND pa.es_protagonista = TRUE
+LEFT JOIN Actores a ON pa.id_actor = a.id_actor
+LEFT JOIN Funciones f ON p.id_pelicula = f.id_pelicula AND f.fecha_funcion >= CURDATE()
+WHERE p.estado = 'Próximamente'
+GROUP BY p.id_pelicula
+ORDER BY fecha_estreno;
+
+-- =============================================
+-- VISTA 16: Boletos Pendientes de Uso
+-- Boletos válidos no utilizados
+-- =============================================
+CREATE OR REPLACE VIEW v_boletos_pendientes AS
+SELECT 
+    b.id_boleto,
+    b.codigo_qr,
+    r.codigo_reserva,
+    CONCAT(cl.nombre, ' ', cl.apellido) AS cliente,
+    p.titulo AS pelicula,
+    c.nombre_complejo AS complejo,
+    s.numero_sala,
+    f.fecha_funcion,
+    f.hora_inicio,
+    b.numero_asiento,
+    b.tipo_boleto,
+    b.precio,
+    CASE 
+        WHEN f.fecha_funcion = CURDATE() THEN 'Hoy'
+        WHEN f.fecha_funcion = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 'Mañana'
+        ELSE CONCAT('En ', DATEDIFF(f.fecha_funcion, CURDATE()), ' días')
+    END AS cuando
+FROM Boletos b
+INNER JOIN Reservas r ON b.id_reserva = r.id_reserva
+INNER JOIN Clientes cl ON r.id_cliente = cl.id_cliente
+INNER JOIN Funciones f ON r.id_funcion = f.id_funcion
+INNER JOIN Peliculas p ON f.id_pelicula = p.id_pelicula
+INNER JOIN Salas s ON f.id_sala = s.id_sala
+INNER JOIN Complejos c ON s.id_complejo = c.id_complejo
+WHERE b.usado = FALSE
+    AND r.estado = 'Confirmada'
+    AND f.fecha_funcion >= CURDATE()
+ORDER BY f.fecha_funcion, f.hora_inicio;
+
+-- =============================================
+-- VISTA 17: Estadísticas por Género
+-- Rendimiento de películas por género
+-- =============================================
+CREATE OR REPLACE VIEW v_estadisticas_genero AS
+SELECT 
+    g.nombre_genero AS genero,
+    COUNT(DISTINCT p.id_pelicula) AS total_peliculas,
+    COUNT(DISTINCT f.id_funcion) AS total_funciones,
+    SUM(r.cantidad_boletos) AS boletos_vendidos,
+    SUM(r.precio_total) AS ingresos_totales,
+    AVG(r.precio_total / r.cantidad_boletos) AS precio_promedio_boleto,
+    ROUND(AVG((s.capacidad - f.asientos_disponibles) / s.capacidad * 100), 1) AS ocupacion_promedio
+FROM Generos g
+INNER JOIN Pelicula_Genero pg ON g.id_genero = pg.id_genero
+INNER JOIN Peliculas p ON pg.id_pelicula = p.id_pelicula
+LEFT JOIN Funciones f ON p.id_pelicula = f.id_pelicula
+LEFT JOIN Salas s ON f.id_sala = s.id_sala
+LEFT JOIN Reservas r ON f.id_funcion = r.id_funcion 
+    AND r.estado IN ('Confirmada', 'Completada')
+WHERE f.fecha_funcion >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+GROUP BY g.id_genero
+ORDER BY boletos_vendidos DESC;
+
+-- =============================================
+-- VISTA 18: Análisis de Precios
+-- Análisis de precios por tipo de sala
+-- =============================================
+CREATE OR REPLACE VIEW v_analisis_precios AS
+SELECT 
+    s.tipo_sala,
+    COUNT(DISTINCT f.id_funcion) AS total_funciones,
+    MIN(f.precio_base) AS precio_minimo,
+    MAX(f.precio_base) AS precio_maximo,
+    AVG(f.precio_base) AS precio_promedio,
+    SUM(s.capacidad - f.asientos_disponibles) AS boletos_vendidos,
+    SUM(f.precio_base * (s.capacidad - f.asientos_disponibles)) AS ingresos_totales,
+    ROUND(AVG((s.capacidad - f.asientos_disponibles) / s.capacidad * 100), 1) AS ocupacion_promedio
+FROM Salas s
+INNER JOIN Funciones f ON s.id_sala = f.id_sala
+WHERE f.fecha_funcion >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    AND f.estado IN ('Programada', 'En curso', 'Finalizada')
+GROUP BY s.tipo_sala
+ORDER BY ingresos_totales DESC;
+
+-- =============================================
+-- VISTA 19: Clientes Frecuentes
+-- Clientes que más visitan el cine
+-- =============================================
+CREATE OR REPLACE VIEW v_clientes_frecuentes AS
+SELECT 
+    cl.id_cliente,
+    CONCAT(cl.nombre, ' ', cl.apellido) AS nombre_completo,
+    cl.email,
+    cl.telefono,
+    ci.nombre_ciudad AS ciudad,
+    COUNT(DISTINCT r.id_reserva) AS visitas_totales,
+    SUM(r.cantidad_boletos) AS boletos_comprados,
+    SUM(r.precio_total) AS gasto_boletos,
+    COALESCE(SUM(v.total), 0) AS gasto_productos,
+    (SUM(r.precio_total) + COALESCE(SUM(v.total), 0)) AS gasto_total,
+    cl.puntos_fidelidad,
+    MAX(r.fecha_reserva) AS ultima_visita,
+    DATEDIFF(CURDATE(), MAX(r.fecha_reserva)) AS dias_desde_ultima_visita,
+    ROUND(COUNT(DISTINCT r.id_reserva) / GREATEST(TIMESTAMPDIFF(MONTH, MIN(r.fecha_reserva), CURDATE()), 1), 1) AS visitas_por_mes
+FROM Clientes cl
+INNER JOIN Reservas r ON cl.id_cliente = r.id_cliente
+LEFT JOIN Ciudades ci ON cl.id_ciudad = ci.id_ciudad
+LEFT JOIN Ventas v ON cl.id_cliente = v.id_cliente AND v.estado = 'Completada'
+WHERE r.estado IN ('Confirmada', 'Completada')
+GROUP BY cl.id_cliente
+HAVING visitas_totales >= 3
+ORDER BY visitas_totales DESC, gasto_total DESC;
+
+-- =============================================
+-- VISTA 20: Dashboard Ejecutivo
+-- KPIs principales del negocio
+-- =============================================
+CREATE OR REPLACE VIEW v_dashboard_ejecutivo AS
+SELECT 
+    'Últimos 30 días' AS periodo,
+    -- Métricas de Boletos
+    COUNT(DISTINCT r.id_reserva) AS total_reservas,
+    SUM(r.cantidad_boletos) AS boletos_vendidos,
+    SUM(r.precio_total) AS ingresos_boletos,
+    AVG(r.precio_total / r.cantidad_boletos) AS precio_promedio_boleto,
+    -- Métricas de Productos
+    COUNT(DISTINCT v.id_venta) AS total_ventas_productos,
+    SUM(v.total) AS ingresos_productos,
+    AVG(v.total) AS ticket_promedio_producto,
+    -- Totales
+    (SUM(r.precio_total) + SUM(v.total)) AS ingresos_totales,
+    -- Clientes
+    COUNT(DISTINCT r.id_cliente) AS clientes_boletos,
+    COUNT(DISTINCT v.id_cliente) AS clientes_productos,
+    COUNT(DISTINCT COALESCE(r.id_cliente, v.id_cliente)) AS clientes_unicos,
+    -- Funciones
+    COUNT(DISTINCT f.id_funcion) AS funciones_realizadas,
+    COUNT(DISTINCT p.id_pelicula) AS peliculas_proyectadas,
+    -- Ocupación
+    ROUND(AVG((s.capacidad - f.asientos_disponibles) / s.capacidad * 100), 1) AS ocupacion_promedio
+FROM Funciones f
+INNER JOIN Salas s ON f.id_sala = s.id_sala
+INNER JOIN Peliculas p ON f.id_pelicula = p.id_pelicula
+LEFT JOIN Reservas r ON f.id_funcion = r.id_funcion 
+    AND r.estado IN ('Confirmada', 'Completada')
+    AND r.fecha_reserva >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+LEFT JOIN Ventas v ON v.estado = 'Completada'
+    AND v.fecha_venta >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+WHERE f.fecha_funcion >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    AND f.estado IN ('Programada', 'En curso', 'Finalizada');
+
+-- =============================================
+-- VERIFICACIÓN DE VISTAS CREADAS
+-- =============================================
+SELECT 
+    TABLE_NAME AS 'Vista Creada',
+    CREATE_TIME AS 'Fecha Creación'
+FROM information_schema.VIEWS
+WHERE TABLE_SCHEMA = 'CineDB'
+ORDER BY TABLE_NAME;

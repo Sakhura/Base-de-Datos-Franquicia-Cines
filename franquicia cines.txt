@@ -1,0 +1,310 @@
+-- =============================================
+-- BASE DE DATOS PARA SISTEMA DE CINE
+-- =============================================
+
+DROP DATABASE IF EXISTS CineDB;
+CREATE DATABASE CineDB;
+USE CineDB;
+
+-- =============================================
+-- 1. TABLA: Paises
+-- =============================================
+CREATE TABLE Paises (
+    id_pais INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_pais VARCHAR(100) NOT NULL UNIQUE,
+    codigo_iso CHAR(2) NOT NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================
+-- 2. TABLA: Ciudades
+-- =============================================
+CREATE TABLE Ciudades (
+    id_ciudad INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_ciudad VARCHAR(100) NOT NULL,
+    id_pais INT NOT NULL,
+    poblacion INT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_pais) REFERENCES Paises(id_pais)
+);
+
+-- =============================================
+-- 3. TABLA: Complejos (Multiplex/Cines)
+-- =============================================
+CREATE TABLE Complejos (
+    id_complejo INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_complejo VARCHAR(150) NOT NULL,
+    direccion VARCHAR(255) NOT NULL,
+    id_ciudad INT NOT NULL,
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    capacidad_total INT,
+    estacionamiento BOOLEAN DEFAULT TRUE,
+    fecha_apertura DATE,
+    estado ENUM('Activo', 'Mantenimiento', 'Cerrado') DEFAULT 'Activo',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_ciudad) REFERENCES Ciuddes(id_ciudad)
+);
+
+-- =============================================
+-- 4. TABLA: Salas
+-- =============================================
+CREATE TABLE Salas (
+    id_sala INT PRIMARY KEY AUTO_INCREMENT,
+    numero_sala INT NOT NULL,
+    id_complejo INT NOT NULL,
+    capacidad INT NOT NULL,
+    tipo_sala ENUM('2D', '3D', 'IMAX', 'VIP', '4DX') DEFAULT '2D',
+    estado ENUM('Disponible', 'Mantenimiento', 'Ocupada') DEFAULT 'Disponible',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_complejo) REFERENCES Complejos(id_complej)
+);
+
+-- =============================================
+-- 5. TABLA: Generos
+-- =============================================
+CREATE TABLE Generos (
+    id_genero INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_genero VARCHAR(50) NOT NULL UNIQUE,
+    descripcion TEXT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================
+-- 6. TABLA: Clasificaciones
+-- =============================================
+CREATE TABLE Clasificaciones (
+    id_clasificacion INT PRIMARY KEY AUTO_INCREMENT,
+    codigo VARCHAR(10) NOT NULL UNIQUE,
+    descripcion VARCHAR(255) NOT NULL,
+    edad_minima INT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================
+-- 7. TABLA: Peliculas
+-- =============================================
+CREATE TABLE Peliculas (
+    id_pelicula INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(255) NOT NULL,
+    titulo_original VARCHAR(255),
+    duracion_minutos INT NOT NULL,
+    id_clasificacion INT NOT NULL,
+    sinopsis TEXT,
+    director VARCHAR(150),
+    año_estreno YEAR,
+    id_pais_origen INT,
+    presupuesto DECIMAL(15,2),
+    recaudacion DECIMAL(15,2),
+    idioma_original VARCHAR(50),
+    estado ENUM('En cartelera', 'Próximamente', 'Fuera de cartelera') DEFAULT 'Próximamente',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_clasificacion) REFERENCES Clasificaciones(id_clasificacion),
+    FOREIGN KEY (id_pais_origen) REFERENCES Paises(id_pais)
+);
+
+-- =============================================
+-- 8. TABLA: Pelicula_Genero (Relación M:N)
+-- =============================================
+CREATE TABLE Pelicula_Genero (
+    id_pelicula INT NOT NULL,
+    id_genero INT NOT NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_pelicula, id_genero),
+    FOREIGN KEY (id_pelicula) REFERENCES Peliculas(id_pelicula),
+    FOREIGN KEY (id_genero) REFERENCES Generos(id_genero)
+);
+
+-- =============================================
+-- 9. TABLA: Actores
+-- =============================================
+CREATE TABLE Actores (
+    id_actor INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_completo VARCHAR(150) NOT NULL,
+    fecha_nacimiento DATE,
+    id_pais_origen INT,
+    biografia TEXT,
+    premios_ganados INT DEFAULT 0,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_pais_origen) REFERENCES Paises(id_pais)
+);
+
+-- =============================================
+-- 10. TABLA: Pelicula_Actor (Relación M:N)
+-- =============================================
+CREATE TABLE Pelicula_Actor (
+    id_pelicula INT NOT NULL,
+    id_actor INT NOT NULL,
+    personaje VARCHAR(150),
+    es_protagonista BOOLEAN DEFAULT FALSE,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_pelicula, id_actor),
+    FOREIGN KEY (id_pelicula) REFERENCES Peliculas(id_pelicula),
+    FOREIGN KEY (id_actor) REFERENCES Actores(id_actor)
+);
+
+-- =============================================
+-- 11. TABLA: Funciones
+-- =============================================
+CREATE TABLE Funciones (
+    id_funcion INT PRIMARY KEY AUTO_INCREMENT,
+    id_pelicula INT NOT NULL,
+    id_sala INT NOT NULL,
+    fecha_funcion DATE NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    precio_base DECIMAL(8,2) NOT NULL,
+    asientos_disponibles INT,
+    subtitulada BOOLEAN DEFAULT FALSE,
+    idioma_audio VARCHAR(50),
+    estado ENUM('Programada', 'En curso', 'Finalizada', 'Cancelada') DEFAULT 'Programada',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_pelicula) REFERENCES Peliculas(id_pelicula),
+    FOREIGN KEY (id_sala) REFERENCES Salas(id_sala)
+);
+
+-- =============================================
+-- 12. TABLA: Clientes
+-- =============================================
+CREATE TABLE Clientes (
+    id_cliente INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    telefono VARCHAR(20),
+    fecha_nacimiento DATE,
+    documento_identidad VARCHAR(50) UNIQUE,
+    id_ciudad INT,
+    direccion VARCHAR(255),
+    puntos_fidelidad INT DEFAULT 0,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_ciudad) REFERENCES Ciudades(id_ciudad)
+);
+
+-- =============================================
+-- 13. TABLA: Membresias
+-- =============================================
+CREATE TABLE Membresias (
+    id_membresia INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_membresia VARCHAR(50) NOT NULL UNIQUE,
+    precio_mensual DECIMAL(8,2) NOT NULL,
+    descuento_porcentaje INT,
+    funciones_gratis_mes INT DEFAULT 0,
+    acceso_preventas BOOLEAN DEFAULT FALSE,
+    descripcion TEXT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================
+-- 14. TABLA: Cliente_Membresia
+-- =============================================
+CREATE TABLE Cliente_Membresia (
+    id_cliente_membresia INT PRIMARY KEY AUTO_INCREMENT,
+    id_cliente INT NOT NULL,
+    id_membresia INT NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NOT NULL,
+    estado ENUM('Activa', 'Vencida', 'Cancelada') DEFAULT 'Activa',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_cliente) REFERENCES Clientes(id_cliente),
+    FOREIGN KEY (id_membresia) REFERENCES Membresias(id_membresia)
+);
+
+-- =============================================
+-- 15. TABLA: Reservas
+-- =============================================
+CREATE TABLE Reservas (
+    id_reserva INT PRIMARY KEY AUTO_INCREMENT,
+    id_cliente INT NOT NULL,
+    id_funcion INT NOT NULL,
+    fecha_reserva TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    cantidad_boletos INT NOT NULL,
+    precio_total DECIMAL(10,2) NOT NULL,
+    codigo_reserva VARCHAR(20) UNIQUE NOT NULL,
+    estado ENUM('Pendiente', 'Confirmada', 'Cancelada', 'Completada') DEFAULT 'Pendiente',
+    fecha_expiracion TIMESTAMP,
+    FOREIGN KEY (id_cliente) REFERENCES Clientes(id_cliente),
+    FOREIGN KEY (id_funcion) REFERENCES Funciones(id_funcion)
+);
+
+-- =============================================
+-- 16. TABLA: Boletos
+-- =============================================
+CREATE TABLE Boletos (
+    id_boleto INT PRIMARY KEY AUTO_INCREMENT,
+    id_reserva INT NOT NULL,
+    numero_asiento VARCHAR(10) NOT NULL,
+    tipo_boleto ENUM('General', 'Estudiante', 'Niño', 'Adulto Mayor', 'VIP') DEFAULT 'General',
+    precio DECIMAL(8,2) NOT NULL,
+    codigo_qr VARCHAR(255) UNIQUE,
+    usado BOOLEAN DEFAULT FALSE,
+    fecha_uso TIMESTAMP NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_reserva) REFERENCES Reservas(id_reserva)
+);
+
+-- =============================================
+-- 17. TABLA: Productos
+-- =============================================
+CREATE TABLE Productos (
+    id_producto INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_producto VARCHAR(100) NOT NULL,
+    categoria ENUM('Comida', 'Bebida', 'Combo', 'Snack', 'Dulces') NOT NULL,
+    precio DECIMAL(8,2) NOT NULL,
+    costo DECIMAL(8,2),
+    stock INT DEFAULT 0,
+    descripcion TEXT,
+    calorias INT,
+    disponible BOOLEAN DEFAULT TRUE,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================
+-- 18. TABLA: Ventas
+-- =============================================
+CREATE TABLE Ventas (
+    id_venta INT PRIMARY KEY AUTO_INCREMENT,
+    id_cliente INT,
+    id_complejo INT NOT NULL,
+    fecha_venta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    subtotal DECIMAL(10,2) NOT NULL,
+    impuesto DECIMAL(10,2) NOT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    metodo_pago ENUM('Efectivo', 'Tarjeta Débito', 'Tarjeta Crédito', 'Transferencia', 'App Móvil') NOT NULL,
+    estado ENUM('Completada', 'Pendiente', 'Cancelada', 'Reembolsada') DEFAULT 'Completada',
+    FOREIGN KEY (id_cliente) REFERENCES Clientes(id_cliente),
+    FOREIGN KEY (id_complejo) REFERENCES Complejos(id_complejo)
+);
+
+-- =============================================
+-- 19. TABLA: Detalle_Venta
+-- =============================================
+CREATE TABLE Detalle_Venta (
+    id_detalle INT PRIMARY KEY AUTO_INCREMENT,
+    id_venta INT NOT NULL,
+    id_producto INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(8,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_venta) REFERENCES Ventas(id_venta),
+    FOREIGN KEY (id_producto) REFERENCS Productos(id_producto)
+);
+
+-- =============================================
+-- 20. TABLA: Empleados
+-- =============================================
+CREATE TABLE Empleados (
+    id_empleado INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    telefono VARCHAR(20),
+    id_complejo INT NOT NULL,
+    puesto ENUM('Gerente', 'Cajero', 'Proyeccionista', 'Limpieza', 'Seguridad', 'Vendedor') NOT NULL,
+    salario DECIMAL(10,2),
+    fecha_contratacion DATE NOT NULL,
+    estado ENUM('Activo', 'Inactivo', 'Vacaciones', 'Suspendido') DEFAULT 'Activo',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_complejo) REFERENCES Coplejos(id_complejo)
+);

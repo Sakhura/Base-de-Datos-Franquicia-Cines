@@ -1,0 +1,595 @@
+-- =============================================
+-- STORED PROCEDURES - BASE DE DATOS CINE
+-- =============================================
+
+USE CineDB;
+
+DELIMITER //
+
+-- =============================================
+-- SP 1: Crear nueva reserva
+-- =============================================
+CREATE PROCEDURE sp_crear_reserva(
+    IN p_id_cliente INT,
+    IN p_id_funcion INT,
+    IN p_cantidad_boletos INT,
+    OUT p_id_reserva INT,
+    OUT p_codigo_reserva VARCHAR(20)
+)
+BEGIN
+    DECLARE v_precio_base DECIMAL(8,2);
+    DECLARE v_precio_total DECIMAL(10,2);
+    DECLARE v_asientos_disponibles INT;
+    DECLARE v_fecha_expiracion TIMESTAMP;
+    
+    -- Obtener precio de la función y asientos disponibles
+    SELECT precio_base, asientos_disponibles 
+    INTO v_precio_base, v_asientos_disponibles
+    FROM Funciones 
+    WHERE id_funcion = p_id_funcion;
+    
+    -- Verificar disponibilidad
+    IF v_asientos_disponibles >= p_cantidad_boletos THEN
+        -- Calcular precio total
+        SET v_precio_total = v_precio_base * p_cantidad_boletos;
+        
+        -- Generar código de reserva único
+        SET p_codigo_reserva = CONCAT('RES', LPAD(FLOOR(RAND() * 999999), 6, '0'));
+        
+        -- Calcular fecha de expiración (30 minutos antes de la función)
+        SELECT DATE_SUB(CONCAT(fecha_funcion, ' ', hora_inicio), INTERVAL 30 MINUTE)
+        INTO v_fecha_expiracion
+        FROM Funciones
+        WHERE id_funcion = p_id_funcion;
+        
+        -- Crear reserva
+        INSERT INTO Reservas (id_cliente, id_funcion, cantidad_boletos, precio_total, codigo_reserva, estado, fecha_expiracion)
+        VALUES (p_id_cliente, p_id_funcion, p_cantidad_boletos, v_precio_total, p_codigo_reserva, 'Pendiente', v_fecha_expiracion);
+        
+        SET p_id_reserva = LAST_INSERT_ID();
+        
+        -- Actualizar asientos disponibles
+        UPDATE Funciones 
+        SET asientos_disponibles = asientos_disponibles - p_cantidad_boletos
+        WHERE id_funcion = p_id_funcion;
+    ELSE
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'No hay suficientes asientos disponibles';
+    END IF;
+END //
+
+-- =============================================
+-- SP 2: Confirmar reserva y generar boletos
+-- =============================================
+CREATE PROCEDURE sp_confirmar_reserva(
+    IN p_id_reserva INT
+)
+BEGIN
+    DECLARE v_cantidad_boletos INT;
+    DECLARE v_precio_base DECIMAL(8,2);
+    DECLARE v_contador INT DEFAULT 1;
+    
+    -- Obtener datos de la reserva
+    SELECT cantidad_boletos, precio_total / cantidad_boletos
+    INTO v_cantidad_boletos, v_precio_base
+    FROM Reservas
+    WHERE id_reserva = p_id_reserva;
+    
+    -- Actualizar estado de la reserva
+    UPDATE Reservas 
+    SET estado = 'Confirmada'
+    WHERE id_reserva = p_id_reserva;
+    
+    -- Generar boletos
+    WHILE v_contador <= v_cantidad_boletos DO
+        INSERT INTO Boletos (id_reserva, numero_asiento, tipo_boleto, precio, codigo_qr)
+        VALUES (
+            p_id_reserva, 
+            CONCAT(CHAR(64 + FLOOR(RAND() * 10) + 1), '-', LPAD(FLOOR(RAND() * 30) + 1, 2, '0')),
+            'General',
+            v_precio_base,
+            CONCAT('QR', LPAD(p_id_reserva, 3, '0'), LPAD(v_contador, 3, '0'))
+        );
+        SET v_contador = v_contador + 1;
+    END WHILE;
+END //
+
+-- =============================================
+-- SP 3: Cancelar reserva
+-- =============================================
+CREATE PROCEDURE sp_cancelar_reserva(
+    IN p_id_reserva INT
+)
+BEGIN
+    DECLARE v_id_funcion INT;
+    DECLARE v_cantidad_boletos INT;
+    
+    -- Obtener datos de la reserva
+    SELECT id_funcion, cantidad_boletos
+    INTO v_id_funcion, v_cantidad_boletos
+    FROM Reservas
+    WHERE id_reserva = p_id_reserva;
+    
+    -- Actualizar estado de la reserva
+    UPDATE Reservas 
+    SET estado = 'Cancelada'
+    WHERE id_reserva = p_id_reserva;
+    
+    -- Liberar asientos
+    UPDATE Funciones 
+    SET asientos_disponibles = asientos_disponibles + v_cantidad_boletos
+    WHERE id_funcion = v_id_funcion;
+END //
+
+-- =============================================
+-- SP 4: Buscar funciones disponibles por película y fecha
+-- =============================================
+CREATE PROCEDURE sp_buscar_funciones(
+    IN p_id_pelicula INT,
+    IN p_fecha DATE
+)
+BEGIN
+    SELECT 
+        f.id_funcion,
+        f.fecha_funcion,
+        f.hora_inicio,
+        f.hora_fin,
+        f.precio_base,
+        f.asientos_disponibles,
+        s.numero_sala,
+        s.tipo_sala,
+        c.nombre_complejo,
+        c.direccion
+    FROM Funciones f
+    INNER JOIN Salas s ON f.id_sala = s.id_sala
+    INNER JOIN Complejos c ON s.id_complejo = c.id_complejo
+    WHERE f.id_pelicula = p_id_pelicula
+        AND f.fecha_funcion = p_fecha
+        AND f.estado = 'Programada'
+        AND f.asientos_disponibles > 0
+    ORDER BY f.hora_inicio;
+END //
+
+-- =============================================
+-- SP 5: Registrar venta de productos
+-- =============================================
+CREATE PROCEDURE sp_registrar_venta(
+    IN p_id_cliente INT,
+    IN p_id_complejo INT,
+    IN p_metodo_pago VARCHAR(50),
+    OUT p_id_venta INT
+)
+BEGIN
+    DECLARE v_subtotal DECIMAL(10,2) DEFAULT 0;
+    DECLARE v_impuesto DECIMAL(10,2);
+    DECLARE v_total DECIMAL(10,2);
+    
+    -- Crear venta inicial
+    INSERT INTO Ventas (id_cliente, id_complejo, subtotal, impuesto, total, metodo_pago, estado)
+    VALUES (p_id_cliente, p_id_complejo, 0, 0, 0, p_metodo_pago, 'Pendiente');
+    
+    SET p_id_venta = LAST_INSERT_ID();
+END //
+
+-- =============================================
+-- SP 6: Agregar producto a venta
+-- =============================================
+CREATE PROCEDURE sp_agregar_producto_venta(
+    IN p_id_venta INT,
+    IN p_id_producto INT,
+    IN p_cantidad INT
+)
+BEGIN
+    DECLARE v_precio DECIMAL(8,2);
+    DECLARE v_subtotal_item DECIMAL(10,2);
+    DECLARE v_stock INT;
+    
+    -- Obtener precio y stock del producto
+    SELECT precio, stock 
+    INTO v_precio, v_stock
+    FROM Productos 
+    WHERE id_producto = p_id_producto;
+    
+    -- Verificar stock
+    IF v_stock >= p_cantidad THEN
+        SET v_subtotal_item = v_precio * p_cantidad;
+        
+        -- Insertar detalle
+        INSERT INTO Detalle_Venta (id_venta, id_producto, cantidad, precio_unitario, subtotal)
+        VALUES (p_id_venta, p_id_producto, p_cantidad, v_precio, v_subtotal_item);
+        
+        -- Actualizar stock
+        UPDATE Productos 
+        SET stock = stock - p_cantidad
+        WHERE id_producto = p_id_producto;
+    ELSE
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Stock insuficiente';
+    END IF;
+END //
+
+-- =============================================
+-- SP 7: Finalizar venta
+-- =============================================
+CREATE PROCEDURE sp_finalizar_venta(
+    IN p_id_venta INT
+)
+BEGIN
+    DECLARE v_subtotal DECIMAL(10,2);
+    DECLARE v_impuesto DECIMAL(10,2);
+    DECLARE v_total DECIMAL(10,2);
+    
+    -- Calcular totales
+    SELECT SUM(subtotal)
+    INTO v_subtotal
+    FROM Detalle_Venta
+    WHERE id_venta = p_id_venta;
+    
+    SET v_impuesto = v_subtotal * 0.16; -- 16% de impuesto
+    SET v_total = v_subtotal + v_impuesto;
+    
+    -- Actualizar venta
+    UPDATE Ventas
+    SET subtotal = v_subtotal,
+        impuesto = v_impuesto,
+        total = v_total,
+        estado = 'Completada'
+    WHERE id_venta = p_id_venta;
+END //
+
+-- =============================================
+-- SP 8: Obtener películas en cartelera
+-- =============================================
+CREATE PROCEDURE sp_peliculas_en_cartelera()
+BEGIN
+    SELECT 
+        p.id_pelicula,
+        p.titulo,
+        p.duracion_minutos,
+        p.sinopsis,
+        p.director,
+        p.año_estreno,
+        c.codigo AS clasificacion,
+        GROUP_CONCAT(DISTINCT g.nombre_genero SEPARATOR ', ') AS generos,
+        COUNT(DISTINCT f.id_funcion) AS funciones_disponibles
+    FROM Peliculas p
+    INNER JOIN Clasificaciones c ON p.id_clasificacion = c.id_clasificacion
+    LEFT JOIN Pelicula_Genero pg ON p.id_pelicula = pg.id_pelicula
+    LEFT JOIN Generos g ON pg.id_genero = g.id_genero
+    LEFT JOIN Funciones f ON p.id_pelicula = f.id_pelicula 
+        AND f.fecha_funcion >= CURDATE() 
+        AND f.estado = 'Programada'
+    WHERE p.estado = 'En cartelera'
+    GROUP BY p.id_pelicula
+    ORDER BY p.titulo;
+END //
+
+-- =============================================
+-- SP 9: Reporte de ventas por período
+-- =============================================
+CREATE PROCEDURE sp_reporte_ventas(
+    IN p_fecha_inicio DATE,
+    IN p_fecha_fin DATE,
+    IN p_id_complejo INT
+)
+BEGIN
+    SELECT 
+        DATE(v.fecha_venta) AS fecha,
+        COUNT(DISTINCT v.id_venta) AS total_ventas,
+        SUM(v.total) AS ingresos_totales,
+        SUM(v.subtotal) AS subtotal,
+        SUM(v.impuesto) AS impuestos,
+        AVG(v.total) AS ticket_promedio,
+        COUNT(DISTINCT v.id_cliente) AS clientes_unicos
+    FROM Ventas v
+    WHERE DATE(v.fecha_venta) BETWEEN p_fecha_inicio AND p_fecha_fin
+        AND (p_id_complejo IS NULL OR v.id_complejo = p_id_complejo)
+        AND v.estado = 'Completada'
+    GROUP BY DATE(v.fecha_venta)
+    ORDER BY fecha;
+END //
+
+-- =============================================
+-- SP 10: Top 10 películas más vistas
+-- =============================================
+CREATE PROCEDURE sp_top_peliculas(
+    IN p_fecha_inicio DATE,
+    IN p_fecha_fin DATE
+)
+BEGIN
+    SELECT 
+        p.id_pelicula,
+        p.titulo,
+        p.director,
+        COUNT(DISTINCT r.id_reserva) AS total_reservas,
+        SUM(r.cantidad_boletos) AS boletos_vendidos,
+        SUM(r.precio_total) AS ingresos_totales,
+        AVG(r.precio_total / r.cantidad_boletos) AS precio_promedio
+    FROM Peliculas p
+    INNER JOIN Funciones f ON p.id_pelicula = f.id_pelicula
+    INNER JOIN Reservas r ON f.id_funcion = r.id_funcion
+    WHERE f.fecha_funcion BETWEEN p_fecha_inicio AND p_fecha_fin
+        AND r.estado IN ('Confirmada', 'Completada')
+    GROUP BY p.id_pelicula
+    ORDER BY boletos_vendidos DESC
+    LIMIT 10;
+END //
+
+-- =============================================
+-- SP 11: Actualizar puntos de fidelidad
+-- =============================================
+CREATE PROCEDURE sp_actualizar_puntos_cliente(
+    IN p_id_cliente INT,
+    IN p_puntos INT
+)
+BEGIN
+    UPDATE Clientes
+    SET puntos_fidelidad = puntos_fidelidad + p_puntos
+    WHERE id_cliente = p_id_cliente;
+END //
+
+-- =============================================
+-- SP 12: Verificar disponibilidad de sala
+-- =============================================
+CREATE PROCEDURE sp_verificar_disponibilidad_sala(
+    IN p_id_sala INT,
+    IN p_fecha DATE,
+    IN p_hora_inicio TIME,
+    IN p_hora_fin TIME
+)
+BEGIN
+    SELECT 
+        CASE 
+            WHEN COUNT(*) > 0 THEN 'No disponible'
+            ELSE 'Disponible'
+        END AS disponibilidad,
+        COUNT(*) AS conflictos
+    FROM Funciones
+    WHERE id_sala = p_id_sala
+        AND fecha_funcion = p_fecha
+        AND estado != 'Cancelada'
+        AND (
+            (hora_inicio BETWEEN p_hora_inicio AND p_hora_fin) OR
+            (hora_fin BETWEEN p_hora_inicio AND p_hora_fin) OR
+            (p_hora_inicio BETWEEN hora_inicio AND hora_fin)
+        );
+END //
+
+-- =============================================
+-- SP 13: Programar nueva función
+-- =============================================
+CREATE PROCEDURE sp_programar_funcion(
+    IN p_id_pelicula INT,
+    IN p_id_sala INT,
+    IN p_fecha_funcion DATE,
+    IN p_hora_inicio TIME,
+    IN p_precio_base DECIMAL(8,2),
+    IN p_subtitulada BOOLEAN,
+    IN p_idioma_audio VARCHAR(50),
+    OUT p_id_funcion INT
+)
+BEGIN
+    DECLARE v_duracion INT;
+    DECLARE v_hora_fin TIME;
+    DECLARE v_capacidad_sala INT;
+    
+    -- Obtener duración de la película
+    SELECT duracion_minutos INTO v_duracion
+    FROM Peliculas WHERE id_pelicula = p_id_pelicula;
+    
+    -- Calcular hora de fin (duración + 15 minutos para limpieza)
+    SET v_hora_fin = ADDTIME(p_hora_inicio, SEC_TO_TIME((v_duracion + 15) * 60));
+    
+    -- Obtener capacidad de la sala
+    SELECT capacidad INTO v_capacidad_sala
+    FROM Salas WHERE id_sala = p_id_sala;
+    
+    -- Insertar función
+    INSERT INTO Funciones (id_pelicula, id_sala, fecha_funcion, hora_inicio, hora_fin, 
+                          precio_base, asientos_disponibles, subtitulada, idioma_audio, estado)
+    VALUES (p_id_pelicula, p_id_sala, p_fecha_funcion, p_hora_inicio, v_hora_fin,
+            p_precio_base, v_capacidad_sala, p_subtitulada, p_idioma_audio, 'Programada');
+    
+    SET p_id_funcion = LAST_INSERT_ID();
+END //
+
+-- =============================================
+-- SP 14: Obtener historial de cliente
+-- =============================================
+CREATE PROCEDURE sp_historial_cliente(
+    IN p_id_cliente INT
+)
+BEGIN
+    SELECT 
+        r.id_reserva,
+        r.codigo_reserva,
+        r.fecha_reserva,
+        p.titulo AS pelicula,
+        f.fecha_funcion,
+        f.hora_inicio,
+        c.nombre_complejo,
+        s.numero_sala,
+        r.cantidad_boletos,
+        r.precio_total,
+        r.estado
+    FROM Reservas r
+    INNER JOIN Funciones f ON r.id_funcion = f.id_funcion
+    INNER JOIN Peliculas p ON f.id_pelicula = p.id_pelicula
+    INNER JOIN Salas s ON f.id_sala = s.id_sala
+    INNER JOIN Complejos c ON s.id_complejo = c.id_complejo
+    WHERE r.id_cliente = p_id_cliente
+    ORDER BY r.fecha_reserva DESC;
+END //
+
+-- =============================================
+-- SP 15: Productos más vendidos
+-- =============================================
+CREATE PROCEDURE sp_productos_mas_vendidos(
+    IN p_fecha_inicio DATE,
+    IN p_fecha_fin DATE,
+    IN p_limite INT
+)
+BEGIN
+    SELECT 
+        p.id_producto,
+        p.nombre_producto,
+        p.categoria,
+        SUM(dv.cantidad) AS cantidad_vendida,
+        SUM(dv.subtotal) AS ingresos_generados,
+        COUNT(DISTINCT dv.id_venta) AS numero_transacciones,
+        AVG(dv.precio_unitario) AS precio_promedio
+    FROM Productos p
+    INNER JOIN Detalle_Venta dv ON p.id_producto = dv.id_producto
+    INNER JOIN Ventas v ON dv.id_venta = v.id_venta
+    WHERE DATE(v.fecha_venta) BETWEEN p_fecha_inicio AND p_fecha_fin
+        AND v.estado = 'Completada'
+    GROUP BY p.id_producto
+    ORDER BY cantidad_vendida DESC
+    LIMIT p_limite;
+END //
+
+-- =============================================
+-- SP 16: Ocupación de salas
+-- =============================================
+CREATE PROCEDURE sp_ocupacion_salas(
+    IN p_id_complejo INT,
+    IN p_fecha DATE
+)
+BEGIN
+    SELECT 
+        s.numero_sala,
+        s.tipo_sala,
+        s.capacidad,
+        COUNT(f.id_funcion) AS funciones_programadas,
+        SUM(s.capacidad - f.asientos_disponibles) AS asientos_vendidos,
+        SUM(s.capacidad) AS capacidad_total,
+        ROUND((SUM(s.capacidad - f.asientos_disponibles) / SUM(s.capacidad)) * 100, 2) AS porcentaje_ocupacion
+    FROM Salas s
+    LEFT JOIN Funciones f ON s.id_sala = f.id_sala 
+        AND f.fecha_funcion = p_fecha
+        AND f.estado = 'Programada'
+    WHERE s.id_complejo = p_id_complejo
+    GROUP BY s.id_sala
+    ORDER BY s.numero_sala;
+END //
+
+-- =============================================
+-- SP 17: Validar y usar boleto
+-- =============================================
+CREATE PROCEDURE sp_validar_boleto(
+    IN p_codigo_qr VARCHAR(255)
+)
+BEGIN
+    DECLARE v_usado BOOLEAN;
+    DECLARE v_id_boleto INT;
+    
+    -- Verificar si el boleto existe y obtener su estado
+    SELECT id_boleto, usado 
+    INTO v_id_boleto, v_usado
+    FROM Boletos 
+    WHERE codigo_qr = p_codigo_qr;
+    
+    IF v_id_boleto IS NULL THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Boleto no encontrado';
+    ELSEIF v_usado = TRUE THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Boleto ya utilizado';
+    ELSE
+        -- Marcar boleto como usado
+        UPDATE Boletos 
+        SET usado = TRUE, 
+            fecha_uso = NOW()
+        WHERE id_boleto = v_id_boleto;
+        
+        SELECT 'Boleto válido - Acceso permitido' AS mensaje;
+    END IF;
+END //
+
+-- =============================================
+-- SP 18: Reporte de empleados por complejo
+-- =============================================
+CREATE PROCEDURE sp_reporte_empleados(
+    IN p_id_complejo INT
+)
+BEGIN
+    SELECT 
+        e.id_empleado,
+        CONCAT(e.nombre, ' ', e.apellido) AS nombre_completo,
+        e.puesto,
+        e.email,
+        e.telefono,
+        e.salario,
+        e.fecha_contratacion,
+        TIMESTAMPDIFF(YEAR, e.fecha_contratacion, CURDATE()) AS años_servicio,
+        e.estado
+    FROM Empleados e
+    WHERE e.id_complejo = p_id_complejo
+    ORDER BY e.puesto, e.apellido;
+END //
+
+-- =============================================
+-- SP 19: Estadísticas generales del cine
+-- =============================================
+CREATE PROCEDURE sp_estadisticas_generales(
+    IN p_fecha_inicio DATE,
+    IN p_fecha_fin DATE
+)
+BEGIN
+    SELECT 
+        (SELECT COUNT(*) FROM Reservas 
+         WHERE DATE(fecha_reserva) BETWEEN p_fecha_inicio AND p_fecha_fin 
+         AND estado IN ('Confirmada', 'Completada')) AS total_reservas,
+        
+        (SELECT SUM(cantidad_boletos) FROM Reservas 
+         WHERE DATE(fecha_reserva) BETWEEN p_fecha_inicio AND p_fecha_fin 
+         AND estado IN ('Confirmada', 'Completada')) AS boletos_vendidos,
+        
+        (SELECT SUM(precio_total) FROM Reservas 
+         WHERE DATE(fecha_reserva) BETWEEN p_fecha_inicio AND p_fecha_fin 
+         AND estado IN ('Confirmada', 'Completada')) AS ingresos_boletos,
+        
+        (SELECT SUM(total) FROM Ventas 
+         WHERE DATE(fecha_venta) BETWEEN p_fecha_inicio AND p_fecha_fin 
+         AND estado = 'Completada') AS ingresos_productos,
+        
+        (SELECT COUNT(DISTINCT id_cliente) FROM Reservas 
+         WHERE DATE(fecha_reserva) BETWEEN p_fecha_inicio AND p_fecha_fin) AS clientes_unicos,
+        
+        (SELECT COUNT(*) FROM Peliculas WHERE estado = 'En cartelera') AS peliculas_cartelera;
+END //
+
+-- =============================================
+-- SP 20: Búsqueda de películas por criterios
+-- =============================================
+CREATE PROCEDURE sp_buscar_peliculas(
+    IN p_titulo VARCHAR(255),
+    IN p_genero VARCHAR(50),
+    IN p_año_inicio YEAR,
+    IN p_año_fin YEAR
+)
+BEGIN
+    SELECT DISTINCT
+        p.id_pelicula,
+        p.titulo,
+        p.titulo_original,
+        p.duracion_minutos,
+        p.director,
+        p.año_estreno,
+        p.sinopsis,
+        c.codigo AS clasificacion,
+        GROUP_CONCAT(DISTINCT g.nombre_genero SEPARATOR ', ') AS generos,
+        p.estado
+    FROM Peliculas p
+    INNER JOIN Clasificaciones c ON p.id_clasificacion = c.id_clasificacion
+    LEFT JOIN Pelicula_Genero pg ON p.id_pelicula = pg.id_pelicula
+    LEFT JOIN Generos g ON pg.id_genero = g.id_genero
+    WHERE (p_titulo IS NULL OR p.titulo LIKE CONCAT('%', p_titulo, '%'))
+        AND (p_año_inicio IS NULL OR p.año_estreno >= p_año_inicio)
+        AND (p_año_fin IS NULL OR p.año_estreno <= p_año_fin)
+        AND (p_genero IS NULL OR g.nombre_genero = p_genero)
+    GROUP BY p.id_pelicula
+    ORDER BY p.año_estreno DESC, p.titulo;
+END //
+
+DELIMITER ;

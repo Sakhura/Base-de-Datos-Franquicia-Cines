@@ -1,0 +1,491 @@
+-- =============================================
+-- INSERTS DE DATOS - BASE DE DATOS CINE
+-- =============================================
+
+USE CineDB;
+
+-- =============================================
+-- INSERTS: Paises (20 registros)
+-- =============================================
+INSERT INTO Paises (nombre_pais, codigo_iso) VALUES
+('Estados Unidos', 'US'),
+('México', 'MX'),
+('España', 'ES'),
+('Argentina', 'AR'),
+('Colombia', 'CO'),
+('Reino Unido', 'GB'),
+('Francia', 'FR'),
+('Italia', 'IT'),
+('Alemania', 'DE'),
+('Japón', 'JP'),
+('Corea del Sur', 'KR'),
+('India', 'IN'),
+('Brasil', 'BR'),
+('Canadá', 'CA'),
+('Australia', 'AU'),
+('China', 'CN'),
+('Rusia', 'RU'),
+('Chile', 'CL'),
+('Perú', 'PE'),
+('Venezuela', 'VE');
+
+-- =============================================
+-- INSERTS: Ciudades (20 registros)
+-- =============================================
+INSERT INTO Ciudades (nombre_ciudad, id_pais, poblacion) VALUES
+('Los Ángeles', 1, 3980400),
+('Ciudad de México', 2, 9209944),
+('Madrid', 3, 3223334),
+('Buenos Aires', 4, 3075646),
+('Bogotá', 5, 7412566),
+('Londres', 6, 9002488),
+('París', 7, 2165423),
+('Roma', 8, 2872800),
+('Berlín', 9, 3769495),
+('Tokio', 10, 13960000),
+('Seúl', 11, 9776000),
+('Mumbai', 12, 20411000),
+('São Paulo', 13, 12325232),
+('Toronto', 14, 2930000),
+('Sídney', 15, 5312000),
+('Shanghái', 16, 27058000),
+('Moscú', 17, 12506000),
+('Santiago', 18, 6310000),
+('Lima', 19, 9752000),
+('Caracas', 20, 2935000);
+
+-- =============================================
+-- INSERTS: Complejos (20 registros)
+-- =============================================
+INSERT INTO Complejos (nombre_complejo, direccion, id_ciudad, telefono, email, capacidad_total, estacionamiento, fecha_apertura, estado) VALUES
+('CinePlex Hollywood', 'Sunset Blvd 1500', 1, '+1-555-0101', 'hollywood@cineplex.com', 2500, TRUE, '2018-05-15', 'Activo'),
+('Cinépolis Reforma', 'Av. Reforma 222', 2, '+52-555-1234', 'reforma@cinepolis.mx', 1800, TRUE, '2015-03-10', 'Activo'),
+('Cinesa Príncipe Pío', 'Paseo de la Florida 2', 3, '+34-91-123-4567', 'principepio@cinesa.es', 1500, TRUE, '2016-11-20', 'Activo'),
+('Village Cines Recoleta', 'Av. Santa Fe 1920', 4, '+54-11-4567-8900', 'recoleta@village.com.ar', 1600, TRUE, '2017-07-08', 'Activo'),
+('Cinemark Unicentro', 'Av. 15 No. 124-30', 5, '+57-1-234-5678', 'unicentro@cinemark.co', 2000, TRUE, '2019-02-14', 'Activo'),
+('Odeon Leicester Square', 'Leicester Square', 6, '+44-20-1234-5678', 'leicester@odeon.co.uk', 1700, FALSE, '2014-09-25', 'Activo'),
+('UGC Ciné Cité Les Halles', 'Forum des Halles', 7, '+33-1-23-45-67-89', 'halles@ugc.fr', 2200, FALSE, '2013-06-12', 'Activo'),
+('The Space Cinema Parco Leonardo', 'Via Portuense 2000', 8, '+39-06-1234-5678', 'parcoleonardo@thespace.it', 1900, TRUE, '2020-01-18', 'Activo'),
+('CineStar Sony Center', 'Potsdamer Straße 4', 9, '+49-30-1234-5678', 'sonycenter@cinestar.de', 1400, FALSE, '2015-10-30', 'Activo'),
+('Toho Cinemas Roppongi Hills', 'Roppongi 6-10-1', 10, '+81-3-1234-5678', 'roppongi@tohocinemas.jp', 2100, TRUE, '2016-04-22', 'Activo'),
+('CGV Yongsan', 'Hangangno 3-ga', 11, '+82-2-1234-5678', 'yongsan@cgv.co.kr', 1850, TRUE, '2017-12-05', 'Activo'),
+('PVR Phoenix', 'Senapati Bapat Marg', 12, '+91-22-1234-5678', 'phoenix@pvr.in', 2300, TRUE, '2018-08-19', 'Activo'),
+('Cinemark Eldorado', 'Av. Rebouças 3970', 13, '+55-11-1234-5678', 'eldorado@cinemark.com.br', 1750, TRUE, '2014-05-27', 'Activo'),
+('Cineplex Scotiabank', 'John St 259', 14, '+1-416-123-4567', 'scotiabank@cineplex.com', 1950, FALSE, '2019-11-03', 'Activo'),
+('Event Cinemas George St', 'George Street 505-525', 15, '+61-2-1234-5678', 'georgest@eventcinemas.com.au', 1650, FALSE, 'Activo', '2015-07-16'),
+('CGV Shanghai', 'Nanjing West Road 1618', 16, '+86-21-1234-5678', 'shanghai@cgv.com.cn', 2400, TRUE, '2020-03-08', 'Activo'),
+('Cinema Park Evropeyskiy', 'Ploshchad Kievskogo', 17, '+7-495-123-4567', 'evropeyskiy@cinemapark.ru', 1550, TRUE, '2016-09-14', 'Activo'),
+('Hoyts La Reina', 'Av. Larraín 5862', 18, '+56-2-1234-5678', 'lareina@hoyts.cl', 1450, TRUE, '2017-06-29', 'Activo'),
+('Cineplanet San Miguel', 'Av. La Marina 2000', 19, '+51-1-234-5678', 'sanmiguel@cineplanet.pe', 1800, TRUE, '2018-10-11', 'Activo'),
+('Cinex Sambil', 'Av. Libertador', 20, '+58-212-123-4567', 'sambil@cinex.com.ve', 1350, TRUE, '2015-02-20', 'Mantenimiento');
+
+-- =============================================
+-- INSERTS: Salas (20 registros)
+-- =============================================
+INSERT INTO Salas (numero_sala, id_complejo, capacidad, tipo_sala, estado) VALUES
+(1, 1, 250, 'IMAX', 'Disponible'),
+(2, 1, 180, '3D', 'Disponible'),
+(3, 2, 200, 'VIP', 'Disponible'),
+(4, 2, 150, '2D', 'Disponible'),
+(5, 3, 220, '4DX', 'Disponible'),
+(6, 4, 175, '3D', 'Disponible'),
+(7, 5, 300, 'IMAX', 'Disponible'),
+(8, 6, 190, '2D', 'Mantenimiento'),
+(9, 7, 240, 'VIP', 'Disponible'),
+(10, 8, 160, '3D', 'Disponible'),
+(11, 9, 210, '2D', 'Disponible'),
+(12, 10, 280, 'IMAX', 'Disponible'),
+(13, 11, 170, '4DX', 'Disponible'),
+(14, 12, 230, '3D', 'Disponible'),
+(15, 13, 195, 'VIP', 'Disponible'),
+(16, 14, 205, '2D', 'Disponible'),
+(17, 15, 185, '3D', 'Disponible'),
+(18, 16, 260, 'IMAX', 'Disponible'),
+(19, 17, 155, '2D', 'Disponible'),
+(20, 18, 215, '3D', 'Disponible');
+
+-- =============================================
+-- INSERTS: Generos (20 registros)
+-- =============================================
+INSERT INTO Generos (nombre_genero, descripcion) VALUES
+('Acción', 'Películas con secuencias de acción, persecuciones y combates'),
+('Comedia', 'Películas diseñadas para hacer reír al espectador'),
+('Drama', 'Historias serias y emocionales sobre la condición humana'),
+('Terror', 'Películas diseñadas para asustar y crear tensión'),
+('Ciencia Ficción', 'Historias basadas en conceptos científicos y tecnológicos'),
+('Fantasía', 'Mundos imaginarios con elementos mágicos o sobrenaturales'),
+('Romance', 'Historias centradas en relaciones románticas'),
+('Thriller', 'Películas de suspenso y tensión psicológica'),
+('Animación', 'Películas creadas mediante técnicas de animación'),
+('Aventura', 'Historias de exploración y búsqueda'),
+('Crimen', 'Historias relacionadas con actividades criminales'),
+('Documental', 'Películas que documentan la realidad'),
+('Musical', 'Películas que incluyen números musicales'),
+('Western', 'Historias ambientadas en el Viejo Oeste'),
+('Biográfico', 'Basadas en la vida de personas reales'),
+('Histórico', 'Ambientadas en períodos históricos'),
+('Guerra', 'Historias relacionadas con conflictos bélicos'),
+('Misterio', 'Películas que giran en torno a resolver enigmas'),
+('Superhéroes', 'Historias sobre personajes con superpoderes'),
+('Deportes', 'Centradas en eventos y figuras deportivas');
+
+-- =============================================
+-- INSERTS: Clasificaciones (20 registros)
+-- =============================================
+INSERT INTO Clasificaciones (codigo, descripcion, edad_minima) VALUES
+('G', 'Apta para todo público', 0),
+('PG', 'Se sugiere la guía de los padres', 0),
+('PG-13', 'Se recomienda la guía de los padres para menores de 13', 13),
+('R', 'Restringida, menores de 17 requieren adulto acompañante', 17),
+('NC-17', 'Prohibida para menores de 17', 17),
+('AA', 'Apta para todo público (México)', 0),
+('A', 'Apta para adolescentes', 12),
+('B', 'Para mayores de 12 años', 12),
+('B-15', 'Para mayores de 15 años', 15),
+('C', 'Solo para adultos', 18),
+('D', 'Contenido adulto explícito', 21),
+('TP', 'Todo público (España)', 0),
+('7', 'No recomendada para menores de 7', 7),
+('12', 'No recomendada para menores de 12', 12),
+('16', 'No recomendada para menores de 16', 16),
+('18', 'Prohibida para menores de 18', 18),
+('U', 'Universal (Reino Unido)', 0),
+('PG-UK', 'Guía parental (Reino Unido)', 8),
+('12A', 'Acompañamiento adulto para menores de 12', 12),
+('15-UK', 'Solo mayores de 15', 15);
+
+-- =============================================
+-- INSERTS: Peliculas (20 registros)
+-- =============================================
+INSERT INTO Peliculas (titulo, titulo_original, duracion_minutos, id_clasificacion, sinopsis, director, año_estreno, id_pais_origen, presupuesto, recaudacion, idioma_original, estado) VALUES
+('El Caballero de la Noche', 'The Dark Knight', 152, 4, 'Batman se enfrenta al Joker en una batalla por el alma de Gotham', 'Christopher Nolan', 2008, 1, 185000000.00, 1005973645.00, 'Inglés', 'Fuera de cartelera'),
+('Avengers: Endgame', 'Avengers: Endgame', 181, 3, 'Los Vengadores intentan revertir las acciones de Thanos', 'Anthony y Joe Russo', 2019, 1, 356000000.00, 2798000000.00, 'Inglés', 'Fuera de cartelera'),
+('Coco', 'Coco', 105, 1, 'Un niño mexicano viaja a la Tierra de los Muertos', 'Lee Unkrich', 2017, 1, 175000000.00, 807082196.00, 'Español', 'Fuera de cartelera'),
+('Parasite', 'Gisaengchung', 132, 4, 'Una familia pobre se infiltra en la vida de una familia rica', 'Bong Joon-ho', 2019, 11, 11400000.00, 258779718.00, 'Coreano', 'Fuera de cartelera'),
+('La La Land', 'La La Land', 128, 3, 'Una historia de amor en Los Ángeles entre dos artistas', 'Damien Chazelle', 2016, 1, 30000000.00, 472735720.00, 'Inglés', 'Fuera de cartelera'),
+('Interestelar', 'Interstellar', 169, 3, 'Un grupo de exploradores espaciales busca un nuevo hogar para la humanidad', 'Christopher Nolan', 2014, 1, 165000000.00, 677471339.00, 'Inglés', 'Fuera de cartelera'),
+('El Padrino', 'The Godfather', 175, 4, 'La historia de la familia criminal Corleone', 'Francis Ford Coppola', 1972, 1, 6000000.00, 250341816.00, 'Inglés', 'Fuera de cartelera'),
+('Forrest Gump', 'Forrest Gump', 142, 3, 'La extraordinaria vida de un hombre simple', 'Robert Zemeckis', 1994, 1, 55000000.00, 678222327.00, 'Inglés', 'Fuera de cartelera'),
+('Matrix', 'The Matrix', 136, 4, 'Un hacker descubre la verdad sobre su realidad', 'Lana y Lilly Wachowski', 1999, 1, 63000000.00, 467222728.00, 'Inglés', 'Fuera de cartelera'),
+('El Viaje de Chihiro', 'Sen to Chihiro no Kamikakushi', 125, 2, 'Una niña debe trabajar en una casa de baños para espíritus', 'Hayao Miyazaki', 2001, 10, 19000000.00, 347698333.00, 'Japonés', 'Fuera de cartelera'),
+('Gladiador', 'Gladiator', 155, 4, 'Un general romano se convierte en gladiador para vengarse', 'Ridley Scott', 2000, 1, 103000000.00, 460583960.00, 'Inglés', 'Fuera de cartelera'),
+('El Origen', 'Inception', 148, 3, 'Un ladrón que roba secretos del subconsciente', 'Christopher Nolan', 2010, 1, 160000000.00, 836848102.00, 'Inglés', 'Fuera de cartelera'),
+('Toy Story 4', 'Toy Story 4', 100, 1, 'Woody y los juguetes viven nuevas aventuras', 'Josh Cooley', 2019, 1, 200000000.00, 1073394593.00, 'Inglés', 'Fuera de cartelera'),
+('Joker', 'Joker', 122, 4, 'El origen del icónico villano de Gotham', 'Todd Phillips', 2019, 1, 55000000.00, 1074251311.00, 'Inglés', 'Fuera de cartelera'),
+('1917', '1917', 119, 4, 'Dos soldados británicos en una misión durante la Primera Guerra Mundial', 'Sam Mendes', 2019, 6, 90000000.00, 384882957.00, 'Inglés', 'Fuera de cartelera'),
+('Roma', 'Roma', 135, 4, 'La vida de una familia de clase media en la Ciudad de México de los 70', 'Alfonso Cuarón', 2018, 2, 15000000.00, 1500000.00, 'Español', 'Fuera de cartelera'),
+('Avatar: El Camino del Agua', 'Avatar: The Way of Water', 192, 3, 'Jake Sully y Neytiri protegen a su familia en Pandora', 'James Cameron', 2022, 1, 350000000.00, 2320250281.00, 'Inglés', 'En cartelera'),
+('Dune: Parte Dos', 'Dune: Part Two', 166, 3, 'Paul Atreides continúa su viaje épico', 'Denis Villeneuve', 2024, 1, 190000000.00, 714400000.00, 'Inglés', 'En cartelera'),
+('Oppenheimer', 'Oppenheimer', 180, 4, 'La historia del padre de la bomba atómica', 'Christopher Nolan', 2023, 1, 100000000.00, 952000000.00, 'Inglés', 'En cartelera'),
+('Barbie', 'Barbie', 114, 3, 'Barbie se embarca en un viaje de autodescubrimiento', 'Greta Gerwig', 2023, 1, 145000000.00, 1445638421.00, 'Inglés', 'Próximamente');
+
+-- =============================================
+-- INSERTS: Pelicula_Genero (20 registros)
+-- =============================================
+INSERT INTO Pelicula_Genero (id_pelicula, id_genero) VALUES
+(1, 1), (1, 11), (2, 1), (2, 19), (3, 9), (3, 6),
+(4, 3), (4, 18), (5, 7), (5, 13), (6, 5), (6, 3),
+(7, 11), (7, 3), (8, 3), (8, 7), (9, 5), (9, 1),
+(10, 9), (10, 6), (11, 1), (11, 3), (12, 5), (12, 8),
+(13, 9), (13, 10), (14, 3), (14, 8), (15, 17), (15, 3),
+(16, 3), (16, 16), (17, 5), (17, 10), (18, 5), (18, 10);
+
+-- =============================================
+-- INSERTS: Actores (20 registros)
+-- =============================================
+INSERT INTO Actores (nombre_completo, fecha_nacimiento, id_pais_origen, biografia, premios_ganados) VALUES
+('Leonardo DiCaprio', '1974-11-11', 1, 'Actor y productor estadounidense, ganador del Oscar', 1),
+('Meryl Streep', '1949-06-22', 1, 'Actriz estadounidense, ganadora de tres premios Oscar', 3),
+('Denzel Washington', '1954-12-28', 1, 'Actor, director y productor estadounidense', 2),
+('Robert Downey Jr.', '1965-04-04', 1, 'Actor estadounidense, conocido por Iron Man', 0),
+('Scarlett Johansson', '1984-11-22', 1, 'Actriz y cantante estadounidense', 0),
+('Christian Bale', '1974-01-30', 6, 'Actor británico, conocido por Batman', 1),
+('Natalie Portman', '1981-06-09', 1, 'Actriz y directora estadounidense-israelí', 1),
+('Tom Hanks', '1956-07-09', 1, 'Actor y productor estadounidense, dos veces ganador del Oscar', 2),
+('Cate Blanchett', '1969-05-14', 15, 'Actriz y productora australiana', 2),
+('Javier Bardem', '1969-03-01', 3, 'Actor español, ganador del Oscar', 1),
+('Marion Cotillard', '1975-09-30', 7, 'Actriz francesa, ganadora del Oscar', 1),
+('Song Kang-ho', '1967-01-17', 11, 'Actor surcoreano, estrella de Parasite', 0),
+('Gael García Bernal', '1978-11-30', 2, 'Actor mexicano reconocido internacionalmente', 0),
+('Penélope Cruz', '1974-04-28', 3, 'Actriz española, ganadora del Oscar', 1),
+('Emma Stone', '1988-11-06', 1, 'Actriz estadounidense, ganadora del Oscar', 1),
+('Ryan Gosling', '1980-11-12', 14, 'Actor y músico canadiense', 0),
+('Margot Robbie', '1990-07-02', 15, 'Actriz y productora australiana', 0),
+('Cillian Murphy', '1976-05-25', 6, 'Actor irlandés, ganador del Oscar', 1),
+('Florence Pugh', '1996-01-03', 6, 'Actriz británica', 0),
+('Timothée Chalamet', '1995-12-27', 1, 'Actor estadounidense-francés', 0);
+
+-- =============================================
+-- INSERTS: Pelicula_Actor (20 registros)
+-- =============================================
+INSERT INTO Pelicula_Actor (id_pelicula, id_actor, personaje, es_protagonista) VALUES
+(1, 6, 'Bruce Wayne / Batman', TRUE),
+(2, 4, 'Tony Stark / Iron Man', TRUE),
+(2, 5, 'Natasha Romanoff / Black Widow', FALSE),
+(5, 15, 'Mia Dolan', TRUE),
+(5, 16, 'Sebastian Wilder', TRUE),
+(6, 1, 'Cooper', TRUE),
+(8, 8, 'Forrest Gump', TRUE),
+(12, 1, 'Dom Cobb', TRUE),
+(14, 10, 'Arthur Fleck / Joker', FALSE),
+(17, 5, 'Neytiri', TRUE),
+(17, 16, 'Jake Sully', FALSE),
+(18, 20, 'Paul Atreides', TRUE),
+(18, 19, 'Princesa Irulan', FALSE),
+(19, 18, 'J. Robert Oppenheimer', TRUE),
+(20, 17, 'Barbie', TRUE),
+(20, 16, 'Ken', FALSE),
+(3, 13, 'Miguel Rivera', TRUE),
+(7, 3, 'Vito Corleone', FALSE),
+(9, 4, 'Neo', FALSE),
+(11, 3, 'Maximus', FALSE);
+
+-- =============================================
+-- INSERTS: Funciones (20 registros)
+-- =============================================
+INSERT INTO Funciones (id_pelicula, id_sala, fecha_funcion, hora_inicio, hora_fin, precio_base, asientos_disponibles, subtitulada, idioma_audio, estado) VALUES
+(17, 1, '2024-12-15', '14:00:00', '17:12:00', 15.00, 250, FALSE, 'Inglés', 'Programada'),
+(17, 1, '2024-12-15', '18:00:00', '21:12:00', 18.00, 240, FALSE, 'Inglés', 'Programada'),
+(18, 7, '2024-12-16', '15:30:00', '18:16:00', 16.50, 280, TRUE, 'Inglés', 'Programada'),
+(18, 12, '2024-12-16', '19:00:00', '21:46:00', 17.00, 270, FALSE, 'Inglés', 'Programada'),
+(19, 3, '2024-12-17', '16:00:00', '19:00:00', 14.00, 190, TRUE, 'Inglés', 'Programada'),
+(19, 9, '2024-12-17', '20:00:00', '23:00:00', 16.00, 230, FALSE, 'Inglés', 'Programada'),
+(20, 2, '2024-12-18', '12:00:00', '13:54:00', 12.00, 170, FALSE, 'Español', 'Programada'),
+(20, 4, '2024-12-18', '15:00:00', '16:54:00', 13.00, 145, FALSE, 'Español', 'Programada'),
+(3, 13, '2024-12-19', '11:00:00', '12:45:00', 10.00, 165, FALSE, 'Español', 'Programada'),
+(3, 10, '2024-12-19', '14:00:00', '15:45:00', 11.00, 155, FALSE, 'Español', 'Programada'),
+(17, 18, '2024-12-20', '17:00:00', '20:12:00', 19.00, 250, TRUE, 'Inglés', 'Programada'),
+(18, 5, '2024-12-20', '18:30:00', '21:16:00', 20.00, 210, FALSE, 'Inglés', 'Programada'),
+(19, 6, '2024-12-21', '13:00:00', '16:00:00', 15.50, 170, TRUE, 'Inglés', 'Programada'),
+(20, 11, '2024-12-21', '16:30:00', '18:24:00', 12.50, 200, FALSE, 'Español', 'Programada'),
+(17, 14, '2024-12-22', '19:00:00', '22:12:00', 17.50, 220, FALSE, 'Inglés', 'Programada'),
+(18, 15, '2024-12-22', '20:00:00', '22:46:00', 18.50, 185, TRUE, 'Inglés', 'Programada'),
+(19, 16, '2024-12-23', '14:30:00', '17:30:00', 16.00, 195, FALSE, 'Inglés', 'Programada'),
+(20, 17, '2024-12-23', '17:00:00', '18:54:00', 13.50, 180, FALSE, 'Español', 'Programada'),
+(3, 19, '2024-12-24', '10:00:00', '11:45:00', 9.00, 150, FALSE, 'Español', 'Programada'),
+(3, 20, '2024-12-24', '12:30:00', '14:15:00', 10.50, 205, FALSE, 'Español', 'Programada');
+
+-- =============================================
+-- INSERTS: Clientes (20 registros)
+-- =============================================
+INSERT INTO Clientes (nombre, apellido, email, telefono, fecha_nacimiento, documento_identidad, id_ciudad, direccion, puntos_fidelidad) VALUES
+('Juan', 'Pérez García', 'juan.perez@email.com', '+52-555-1001', '1990-05-15', 'CURP123456', 2, 'Calle Reforma 123', 450),
+('María', 'López Hernández', 'maria.lopez@email.com', '+1-555-2002', '1985-08-22', 'SSN987654', 1, '5th Avenue 456', 780),
+('Carlos', 'Rodríguez Sánchez', 'carlos.rodriguez@email.com', '+34-91-3003', '1992-03-10', 'DNI741852', 3, 'Gran Vía 789', 320),
+('Ana', 'Martínez Torres', 'ana.martinez@email.com', '+54-11-4004', '1988-11-30', 'DNI963852', 4, 'Av. Corrientes 234', 590),
+('Luis', 'González Ramírez', 'luis.gonzalez@email.com', '+57-1-5005', '1995-07-18', 'CC147258', 5, 'Carrera 7 567', 210),
+('Laura', 'Fernández Cruz', 'laura.fernandez@email.com', '+44-20-6006', '1987-12-05', 'PASS258369', 6, 'Oxford Street 890', 670),
+('Diego', 'Sánchez Ruiz', 'diego.sanchez@email.com', '+33-1-7007', '1993-09-25', 'CNI369147', 7, 'Champs-Élysées 345', 410),
+('Sofia', 'Ramírez Díaz', 'sofia.ramirez@email.com', '+39-06-8008', '1991-04-14', 'CI753951', 8, 'Via Veneto 678', 530),
+('Miguel', 'Torres Vargas', 'miguel.torres@email.com', '+49-30-9009', '1989-06-08', 'PASS159357', 9, 'Kurfürstendamm 901', 290),
+('Isabella', 'Jiménez Castro', 'isabella.jimenez@email.com', '+81-3-0010', '1994-02-28', 'PASS357159', 10, 'Shibuya 1-2-3', 850),
+('Andrés', 'Morales Ortiz', 'andres.morales@email.com', '+82-2-1011', '1986-10-12', 'RRN951753', 11, 'Gangnam 456', 620),
+('Valentina', 'Castro Mendoza', 'valentina.castro@email.com', '+91-22-2012', '1996-01-20', 'AADHAR741852', 12, 'Marine Drive 789', 380),
+('Roberto', 'Mendoza Silva', 'roberto.mendoza@email.com', '+55-11-3013', '1984-07-07', 'CPF852963', 13, 'Av. Paulista 012', 720),
+('Camila', 'Silva Ramos', 'camila.silva@email.com', '+1-416-4014', '1990-03-16', 'SIN963741', 14, 'Yonge Street 345', 490),
+('Fernando', 'Ramos Guerrero', 'fernando.ramos@email.com', '+61-2-5015', '1992-11-09', 'PASS147852', 15, 'George Street 678', 340),
+('Daniela', 'Guerrero Moreno', 'daniela.guerrero@email.com', '+86-21-6016', '1988-05-23', 'ID258963', 16, 'Nanjing Road 901', 760),
+('Javier', 'Moreno Rojas', 'javier.moreno@email.com', '+7-495-7017', '1991-08-31', 'PASS369852', 17, 'Tverskaya 234', 280),
+('Carolina', 'Rojas Herrera', 'carolina.rojas@email.com', '+56-2-8018', '1987-12-19', 'RUT741963', 18, 'Av. Providencia 567', 550),
+('Sebastián', 'Herrera Vega', 'sebastian.herrera@email.com', '+51-1-9019', '1993-04-04', 'DNI852741', 19, 'Av. Arequipa 890', 420),
+('Gabriela', 'Vega Núñez', 'gabriela.vega@email.com', '+58-212-0020', '1995-09-11', 'CI963852', 20, 'Av. Libertador 123', 310);
+
+-- =============================================
+-- INSERTS: Membresias (20 registros)
+-- =============================================
+INSERT INTO Membresias (nombre_membresia, precio_mensual, descuento_porcentaje, funciones_gratis_mes, acceso_preventas, descripcion) VALUES
+('Básica', 9.99, 5, 0, FALSE, 'Descuento del 5% en todas las entradas'),
+('Plata', 14.99, 10, 1, FALSE, 'Descuento del 10% y 1 función gratis al mes'),
+('Oro', 24.99, 15, 2, TRUE, 'Descuento del 15%, 2 funciones gratis y acceso a preventas'),
+('Platino', 39.99, 20, 3, TRUE, 'Descuento del 20%, 3 funciones gratis y acceso VIP'),
+('Estudiante', 7.99, 15, 0, FALSE, 'Especial para estudiantes con credencial'),
+('Senior', 8.99, 20, 1, FALSE, 'Para mayores de 60 años'),
+('Familiar', 34.99, 12, 2, TRUE, 'Hasta 4 miembros de la familia'),
+('Pareja', 19.99, 10, 1, TRUE, 'Para dos personas'),
+('Anual Básica', 99.99, 10, 0, FALSE, 'Pago anual con descuento del 10%'),
+('Anual Premium', 299.99, 25, 5, TRUE, 'Pago anual con beneficios premium'),
+('Corporativa', 499.99, 15, 10, TRUE, 'Para empresas, hasta 20 empleados'),
+('VIP Ilimitada', 79.99, 30, 999, TRUE, 'Acceso ilimitado a todas las funciones'),
+('Fin de Semana', 12.99, 15, 0, FALSE, 'Descuentos solo viernes a domingo'),
+('Matinée', 6.99, 20, 0, FALSE, 'Descuentos en funciones antes de las 17:00'),
+('Noche', 11.99, 15, 0, FALSE, 'Descuentos en funciones después de las 20:00'),
+('IMAX Plus', 29.99, 10, 1, TRUE, 'Acceso preferente a salas IMAX'),
+('3D Lover', 17.99, 12, 1, FALSE, 'Descuentos en funciones 3D'),
+('Combo Food', 22.99, 8, 0, FALSE, 'Incluye combo de alimentos cada visita'),
+('Trimestral', 39.99, 12, 1, TRUE, 'Pago cada tres meses'),
+('Semestral', 74.99, 18, 3, TRUE, 'Pago cada seis meses');
+
+-- =============================================
+-- INSERTS: Cliente_Membresia (20 registros)
+-- =============================================
+INSERT INTO Cliente_Membresia (id_cliente, id_membresia, fecha_inicio, fecha_fin, estado) VALUES
+(1, 3, '2024-01-01', '2025-01-01', 'Activa'),
+(2, 4, '2024-02-15', '2025-02-15', 'Activa'),
+(3, 2, '2024-03-10', '2025-03-10', 'Activa'),
+(4, 1, '2024-04-05', '2025-04-05', 'Activa'),
+(5, 5, '2024-05-20', '2025-05-20', 'Activa'),
+(6, 7, '2024-06-12', '2025-06-12', 'Activa'),
+(7, 2, '2024-07-08', '2025-07-08', 'Activa'),
+(8, 3, '2024-08-25', '2025-08-25', 'Activa'),
+(9, 1, '2024-09-14', '2025-09-14', 'Activa'),
+(10, 4, '2024-10-30', '2025-10-30', 'Activa'),
+(11, 6, '2024-11-05', '2025-11-05', 'Activa'),
+(12, 8, '2023-12-20', '2024-12-20', 'Vencida'),
+(13, 3, '2024-01-18', '2025-01-18', 'Activa'),
+(14, 2, '2024-02-22', '2025-02-22', 'Activa'),
+(15, 5, '2024-03-16', '2025-03-16', 'Activa'),
+(16, 1, '2024-04-11', '2025-04-11', 'Activa'),
+(17, 7, '2024-05-07', '2025-05-07', 'Activa'),
+(18, 3, '2024-06-29', '2025-06-29', 'Activa'),
+(19, 4, '2024-07-14', '2025-07-14', 'Activa'),
+(20, 2, '2024-08-03', '2024-09-03', 'Cancelada');
+
+-- =============================================
+-- INSERTS: Reservas (20 registros)
+-- =============================================
+INSERT INTO Reservas (id_cliente, id_funcion, fecha_reserva, cantidad_boletos, precio_total, codigo_reserva, estado, fecha_expiracion) VALUES
+(1, 1, '2024-12-10 14:30:00', 2, 30.00, 'RES001A2B3C4', 'Confirmada', '2024-12-15 13:30:00'),
+(2, 2, '2024-12-10 15:00:00', 3, 54.00, 'RES002D5E6F7', 'Confirmada', '2024-12-15 17:30:00'),
+(3, 3, '2024-12-11 10:00:00', 2, 33.00, 'RES003G8H9I0', 'Confirmada', '2024-12-16 15:00:00'),
+(4, 4, '2024-12-11 11:30:00', 4, 68.00, 'RES004J1K2L3', 'Confirmada', '2024-12-16 18:30:00'),
+(5, 5, '2024-12-12 09:00:00', 1, 14.00, 'RES005M4N5O6', 'Confirmada', '2024-12-17 15:30:00'),
+(6, 6, '2024-12-12 10:30:00', 2, 32.00, 'RES006P7Q8R9', 'Confirmada', '2024-12-17 19:30:00'),
+(7, 7, '2024-12-13 08:00:00', 5, 60.00, 'RES007S0T1U2', 'Confirmada', '2024-12-18 11:30:00'),
+(8, 8, '2024-12-13 09:30:00', 2, 26.00, 'RES008V3W4X5', 'Confirmada', '2024-12-18 14:30:00'),
+(9, 9, '2024-12-14 07:00:00', 3, 30.00, 'RES009Y6Z7A8', 'Confirmada', '2024-12-19 10:30:00'),
+(10, 10, '2024-12-14 08:30:00', 4, 44.00, 'RES010B9C0D1', 'Confirmada', '2024-12-19 13:30:00'),
+(11, 11, '2024-12-14 12:00:00', 2, 38.00, 'RES011E2F3G4', 'Pendiente', '2024-12-20 16:30:00'),
+(12, 12, '2024-12-14 13:30:00', 1, 20.00, 'RES012H5I6J7', 'Confirmada', '2024-12-20 18:00:00'),
+(13, 13, '2024-12-15 06:00:00', 2, 31.00, 'RES013K8L9M0', 'Confirmada', '2024-12-21 12:30:00'),
+(14, 14, '2024-12-15 07:30:00', 3, 37.50, 'RES014N1O2P3', 'Confirmada', '2024-12-21 16:00:00'),
+(15, 15, '2024-12-15 11:00:00', 2, 35.00, 'RES015Q4R5S6', 'Confirmada', '2024-12-22 18:30:00'),
+(16, 16, '2024-12-15 12:30:00', 4, 74.00, 'RES016T7U8V9', 'Confirmada', '2024-12-22 19:30:00'),
+(17, 17, '2024-12-16 05:00:00', 1, 16.00, 'RES017W0X1Y2', 'Confirmada', '2024-12-23 14:00:00'),
+(18, 18, '2024-12-16 06:30:00', 2, 27.00, 'RES018Z3A4B5', 'Confirmada', '2024-12-23 16:30:00'),
+(19, 19, '2024-12-16 10:00:00', 6, 54.00, 'RES019C6D7E8', 'Cancelada', '2024-12-24 09:30:00'),
+(20, 20, '2024-12-16 11:30:00', 3, 31.50, 'RES020F9G0H1', 'Confirmada', '2024-12-24 12:00:00');
+
+-- =============================================
+-- INSERTS: Boletos (20 registros)
+-- =============================================
+INSERT INTO Boletos (id_reserva, numero_asiento, tipo_boleto, precio, codigo_qr, usado, fecha_uso) VALUES
+(1, 'A-15', 'General', 15.00, 'QR001A15', TRUE, '2024-12-15 13:45:00'),
+(1, 'A-16', 'General', 15.00, 'QR001A16', TRUE, '2024-12-15 13:45:00'),
+(2, 'B-10', 'VIP', 18.00, 'QR002B10', FALSE, NULL),
+(2, 'B-11', 'VIP', 18.00, 'QR002B11', FALSE, NULL),
+(2, 'B-12', 'VIP', 18.00, 'QR002B12', FALSE, NULL),
+(3, 'C-08', 'General', 16.50, 'QR003C08', FALSE, NULL),
+(3, 'C-09', 'General', 16.50, 'QR003C09', FALSE, NULL),
+(4, 'D-20', 'General', 17.00, 'QR004D20', FALSE, NULL),
+(4, 'D-21', 'General', 17.00, 'QR004D21', FALSE, NULL),
+(4, 'D-22', 'General', 17.00, 'QR004D22', FALSE, NULL),
+(4, 'D-23', 'General', 17.00, 'QR004D23', FALSE, NULL),
+(5, 'E-15', 'VIP', 14.00, 'QR005E15', FALSE, NULL),
+(6, 'F-12', 'General', 16.00, 'QR006F12', FALSE, NULL),
+(6, 'F-13', 'General', 16.00, 'QR006F13', FALSE, NULL),
+(7, 'G-01', 'Estudiante', 12.00, 'QR007G01', FALSE, NULL),
+(7, 'G-02', 'Estudiante', 12.00, 'QR007G02', FALSE, NULL),
+(7, 'G-03', 'Estudiante', 12.00, 'QR007G03', FALSE, NULL),
+(7, 'G-04', 'Estudiante', 12.00, 'QR007G04', FALSE, NULL),
+(7, 'G-05', 'Estudiante', 12.00, 'QR007G05', FALSE, NULL),
+(8, 'H-18', 'General', 13.00, 'QR008H18', FALSE, NULL);
+
+-- =============================================
+-- INSERTS: Productos (20 registros)
+-- =============================================
+INSERT INTO Productos (nombre_producto, categoria, precio, costo, stock, descripcion, calorias, disponible) VALUES
+('Palomitas Pequeñas', 'Snack', 5.50, 1.20, 500, 'Palomitas de maíz naturales', 150, TRUE),
+('Palomitas Medianas', 'Snack', 7.00, 1.80, 450, 'Palomitas de maíz naturales', 250, TRUE),
+('Palomitas Grandes', 'Snack', 9.50, 2.50, 400, 'Palomitas de maíz naturales', 400, TRUE),
+('Refresco Pequeño', 'Bebida', 4.00, 0.80, 600, 'Bebida gaseosa 16oz', 180, TRUE),
+('Refresco Mediano', 'Bebida', 5.50, 1.20, 550, 'Bebida gaseosa 24oz', 280, TRUE),
+('Refresco Grande', 'Bebida', 7.00, 1.60, 500, 'Bebida gaseosa 32oz', 400, TRUE),
+('Combo Pareja', 'Combo', 18.00, 5.00, 200, '2 palomitas medianas + 2 refrescos medianos', 1060, TRUE),
+('Combo Familiar', 'Combo', 28.00, 8.00, 150, '2 palomitas grandes + 4 refrescos grandes', 2400, TRUE),
+('Nachos con Queso', 'Comida', 8.50, 2.50, 300, 'Nachos con salsa de queso', 450, TRUE),
+('Hot Dog', 'Comida', 6.00, 1.80, 250, 'Hot dog con condimentos', 380, TRUE),
+('Pizza Personal', 'Comida', 10.00, 3.50, 180, 'Pizza individual de pepperoni', 620, TRUE),
+('Hamburguesa', 'Comida', 11.50, 4.00, 150, 'Hamburguesa con queso y papas', 750, TRUE),
+('M&Ms', 'Dulces', 3.50, 1.00, 400, 'Chocolate con leche', 240, TRUE),
+('Skittles', 'Dulces', 3.50, 1.00, 380, 'Caramelos de frutas', 230, TRUE),
+('Twix', 'Dulces', 3.00, 0.90, 350, 'Barra de chocolate y caramelo', 250, TRUE),
+('Doritos', 'Snack', 4.50, 1.20, 320, 'Nachos sabor queso', 280, TRUE),
+('Agua Embotellada', 'Bebida', 3.00, 0.60, 700, 'Agua mineral 500ml', 0, TRUE),
+('Café', 'Bebida', 4.50, 1.00, 400, 'Café americano caliente', 5, TRUE),
+('Smoothie', 'Bebida', 6.50, 2.00, 250, 'Batido de frutas naturales', 220, TRUE),
+('Pretzel', 'Snack', 5.00, 1.50, 200, 'Pretzel suave con sal', 340, TRUE);
+
+-- =============================================
+-- INSERTS: Ventas (20 registros)
+-- =============================================
+INSERT INTO Ventas (id_cliente, id_complejo, fecha_venta, subtotal, impuesto, total, metodo_pago, estado) VALUES
+(1, 1, '2024-12-10 14:45:00', 18.00, 2.88, 20.88, 'Tarjeta Crédito', 'Completada'),
+(2, 1, '2024-12-10 15:15:00', 25.00, 4.00, 29.00, 'Efectivo', 'Completada'),
+(3, 2, '2024-12-11 10:30:00', 15.50, 2.48, 17.98, 'Tarjeta Débito', 'Completada'),
+(4, 2, '2024-12-11 12:00:00', 32.00, 5.12, 37.12, 'App Móvil', 'Completada'),
+(5, 3, '2024-12-12 09:30:00', 12.50, 2.00, 14.50, 'Efectivo', 'Completada'),
+(6, 3, '2024-12-12 11:00:00', 28.00, 4.48, 32.48, 'Tarjeta Crédito', 'Completada'),
+(7, 4, '2024-12-13 08:30:00', 40.00, 6.40, 46.40, 'Transferencia', 'Completada'),
+(8, 4, '2024-12-13 10:00:00', 22.50, 3.60, 26.10, 'Tarjeta Débito', 'Completada'),
+(9, 5, '2024-12-14 07:30:00', 18.50, 2.96, 21.46, 'Efectivo', 'Completada'),
+(10, 5, '2024-12-14 09:00:00', 35.00, 5.60, 40.60, 'App Móvil', 'Completada'),
+(11, 6, '2024-12-14 12:30:00', 16.00, 2.56, 18.56, 'Tarjeta Crédito', 'Pendiente'),
+(12, 6, '2024-12-14 14:00:00', 20.00, 3.20, 23.20, 'Efectivo', 'Completada'),
+(13, 7, '2024-12-15 06:30:00', 24.50, 3.92, 28.42, 'Tarjeta Débito', 'Completada'),
+(14, 7, '2024-12-15 08:00:00', 30.00, 4.80, 34.80, 'App Móvil', 'Completada'),
+(15, 8, '2024-12-15 11:30:00', 19.00, 3.04, 22.04, 'Efectivo', 'Completada'),
+(16, 8, '2024-12-15 13:00:00', 45.00, 7.20, 52.20, 'Tarjeta Crédito', 'Completada'),
+(17, 9, '2024-12-16 05:30:00', 14.00, 2.24, 16.24, 'Transferencia', 'Completada'),
+(18, 9, '2024-12-16 07:00:00', 27.50, 4.40, 31.90, 'Tarjeta Débito', 'Completada'),
+(19, 10, '2024-12-16 10:30:00', 38.00, 6.08, 44.08, 'Cancelada', 'Cancelada'),
+(20, 10, '2024-12-16 12:00:00', 21.00, 3.36, 24.36, 'App Móvil', 'Completada');
+
+-- =============================================
+-- INSERTS: Detalle_Venta (20 registros)
+-- =============================================
+INSERT INTO Detalle_Venta (id_venta, id_producto, cantidad, precio_unitario, subtotal) VALUES
+(1, 7, 1, 18.00, 18.00),
+(2, 2, 1, 7.00, 7.00),
+(2, 5, 2, 5.50, 11.00),
+(2, 13, 2, 3.50, 7.00),
+(3, 1, 2, 5.50, 11.00),
+(3, 4, 1, 4.00, 4.00),
+(4, 8, 1, 28.00, 28.00),
+(4, 14, 1, 3.50, 3.50),
+(5, 9, 1, 8.50, 8.50),
+(5, 4, 1, 4.00, 4.00),
+(6, 7, 1, 18.00, 18.00),
+(6, 11, 1, 10.00, 10.00),
+(7, 12, 2, 11.50, 23.00),
+(7, 6, 2, 7.00, 14.00),
+(7, 16, 1, 4.50, 4.50),
+(8, 3, 1, 9.50, 9.50),
+(8, 5, 2, 5.50, 11.00),
+(9, 10, 2, 6.00, 12.00),
+(9, 4, 1, 4.00, 4.00),
+(10, 8, 1, 28.00, 28.00);
+
+-- =============================================
+-- INSERTS: Empleados (20 registros)
+-- =============================================
+INSERT INTO Empleados (nombre, apellido, email, telefono, id_complejo, puesto, salario, fecha_contratacion, estado) VALUES
+('Pedro', 'Martínez López', 'pedro.martinez@cineplex.com', '+1-555-3001', 1, 'Gerente', 4500.00, '2020-01-15', 'Activo'),
+('Elena', 'García Ruiz', 'elena.garcia@cineplex.com', '+1-555-3002', 1, 'Cajero', 2200.00, '2021-03-20', 'Activo'),
+('Jorge', 'Hernández Silva', 'jorge.hernandez@cinepolis.mx', '+52-555-4001', 2, 'Proyeccionista', 2800.00, '2019-06-10', 'Activo'),
+('Patricia', 'López Mendoza', 'patricia.lopez@cinepolis.mx', '+52-555-4002', 2, 'Vendedor', 2100.00, '2022-02-14', 'Activo'),
+('Ricardo', 'Sánchez Torres', 'ricardo.sanchez@cinesa.es', '+34-91-5001', 3, 'Seguridad', 2400.00, '2020-08-05', 'Activo'),
+('Carmen', 'Rodríguez Castro', 'carmen.rodriguez@cinesa.es', '+34-91-5002', 3, 'Cajero', 2300.00, '2021-11-22', 'Activo'),
+('Alberto', 'Fernández Ramos', 'alberto.fernandez@village.com.ar', '+54-11-6001', 4, 'Gerente', 4200.00, '2018-04-18', 'Activo'),
+('Lucía', 'González Vargas', 'lucia.gonzalez@village.com.ar', '+54-11-6002', 4, 'Limpieza', 1900.00, '2022-07-30', 'Activo'),
+('Manuel', 'Ramírez Ortiz', 'manuel.ramirez@cinemark.co', '+57-1-7001', 5, 'Proyeccionista', 2700.00, '2019-12-12', 'Activo'),
+('Sandra', 'Torres Morales', 'sandra.torres@cinemark.co', '+57-1-7002', 5, 'Cajero', 2200.00, '2021-05-25', 'Activo'),
+('Francisco', 'Morales Jiménez', 'francisco.morales@odeon.co.uk', '+44-20-8001', 6, 'Gerente', 5000.00, '2017-09-08', 'Activo'),
+('Isabel', 'Jiménez Guerrero', 'isabel.jimenez@odeon.co.uk', '+44-20-8002', 6, 'Vendedor', 2500.00, '2020-03-15', 'Vacaciones'),
+('Antonio', 'Castro Herrera', 'antonio.castro@ugc.fr', '+33-1-9001', 7, 'Proyeccionista', 2900.00, '2019-01-20', 'Activo'),
+('Rosa', 'Mendoza Rojas', 'rosa.mendoza@ugc.fr', '+33-1-9002', 7, 'Cajero', 2400.00, '2021-08-10', 'Activo'),
+('Tomás', 'Silva Vega', 'tomas.silva@thespace.it', '+39-06-0001', 8, 'Seguridad', 2600.00, '2020-06-28', 'Activo'),
+('Marta', 'Ramos Núñez', 'marta.ramos@thespace.it', '+39-06-0002', 8, 'Limpieza', 2000.00, '2022-11-05', 'Activo'),
+('Enrique', 'Guerrero Soto', 'enrique.guerrero@cinestar.de', '+49-30-1001', 9, 'Gerente', 4800.00, '2018-10-14', 'Activo'),
+('Beatriz', 'Herrera Peña', 'beatriz.herrera@cinestar.de', '+49-30-1002', 9, 'Cajero', 2300.00, '2021-04-07', 'Activo'),
+('Raúl', 'Moreno Campos', 'raul.moreno@tohocinemas.jp', '+81-3-2001', 10, 'Proyeccionista', 3200.00, '2019-07-19', 'Activo'),
+('Victoria', 'Rojas Flores', 'victoria.rojas@tohocinemas.jp', '+81-3-2002', 10, 'Vendedor', 2600.00, '2020-12-03', 'Activo');
